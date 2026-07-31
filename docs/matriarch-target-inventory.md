@@ -1,7 +1,9 @@
 # Matriarch construction target inventory
 
-Status: paused by operator. This record does not authorize VM construction or
-any further live mutation.
+Status: Matriarch libvirt bootstrap completed and verified. Construction is
+paused pending unresolved operator-owned storage, network, addressing, DNS,
+TLS, and export inputs. This record does not authorize VM construction or any
+further live mutation.
 
 ## Operator pause — 2026-07-31
 
@@ -72,4 +74,53 @@ mail-data placement, construction network attachment, guest IP configuration,
 DNS ownership/path, TLS practice, and `APPLIANCE_EXPORT_REFERENCE` remain
 unresolved.
 
-Live mutation: none.
+Live mutation before the 2026-07-31 post-reboot check: the approved Fedora
+package transaction only. No live mutation was performed during the post-reboot
+check below.
+
+## Post-reboot libvirt bootstrap verification — 2026-07-31
+
+Operator direction authorized post-reboot verification and local modular
+socket activation only, beginning from commit
+`f7b9baef43e2c0fa91e72bd6e6a94a2bb955bd11`. The check was completed at
+`2026-07-31T21:12:37Z` using the current local shell. No VM, domain, network,
+pool, disk, DNS, TLS, credential, access-control, firewall, or host-network
+configuration was created or changed.
+
+| Check | Result | Source / exact command | Timestamp (UTC) |
+| --- | --- | --- | --- |
+| Host and operating system | `ws-matriarch`, Fedora Linux 44 | `hostname`; `hostnamectl`; `cat /etc/fedora-release` | 2026-07-31T21:11:44Z |
+| Current boot after package installation | Installed RPM timestamps: 2026-07-31 15:29 EDT; current boot: 2026-07-31 17:06 EDT | `rpm -q --last libvirt-daemon-kvm libvirt-client virt-install`; `uptime -s`; `who -b`; `last -x reboot -F` | 2026-07-31T21:12:37Z |
+| Kernel and system state | `7.0.9-205.fc44.x86_64`; system state `degraded` due only to pre-existing unrelated `movie-av1-out-handoff.path` failure | `uname -r`; `systemctl is-system-running`; `systemctl --failed --no-legend` | 2026-07-31T21:11:44Z |
+| Repository | clean | `git status --short` | 2026-07-31T21:11:44Z |
+| Approved transaction | DNF transaction 78 completed with status `Ok`; requested `libvirt-daemon-kvm`, `libvirt-client`, and `virt-install` installed | `dnf history info last`; `rpm -q libvirt-daemon-kvm libvirt-client virt-install` | 2026-07-31T21:11:44Z |
+| Pending/failed DNF work | No DNF client process observed; transaction 78 is `Ok`. `packagekitd` was resident but is not a DNF transaction. | `dnf history list`; `pgrep -af 'dnf|dnf5|packagekit'` | 2026-07-31T21:11:44Z |
+| Network and resolver comparison | No configuration difference from the 2026-07-31T18:58:48Z evidence: link set, assigned IPv4 addresses, routes, DNS servers, and search domain match. Container-interface IPv6/MAC values changed across the reboot and are not treated as host-network configuration changes. | `ip -brief link`; `ip -brief address`; `ip route`; `resolvectl status`, compared with evidence 16–18 and 21 | 2026-07-31T21:11:44Z |
+| Monolithic and remote libvirt | `libvirtd.service` and `libvirtd.socket` are absent; `virtproxyd-tcp.socket` and `virtproxyd-tls.socket` are disabled/inactive; no TCP listeners on ports 16509/16514 were observed | `systemctl is-enabled`; `systemctl is-active`; `ss -ltnp` | 2026-07-31T21:11:44Z |
+| Authorized modular sockets | `virtqemud.socket`, `virtnetworkd.socket`, `virtstoraged.socket`, `virtlogd.socket`, and `virtlockd.socket` are installed, enabled, and active/listening; all entered listening state during current boot | `systemctl list-unit-files`; `systemctl is-enabled`; `systemctl is-active`; `systemctl show`; `journalctl -b -u ...` | 2026-07-31T21:11:44Z |
+| Extra modular socket state | `virtproxyd.socket`, its local read-only/admin companions, and interface/nodedev/nwfilter/secret modular sockets are also enabled and listening. `virtproxyd.socket` exposes only `/run/libvirt/libvirt-sock`; its TCP/TLS socket units remain disabled. This pre-existing package-preset state was observed, not enabled or changed by this check, but is outside the bootstrap packet's enumerated socket scope. | `systemctl list-unit-files 'virt*.socket' 'libvirtd*.socket'`; `systemctl list-sockets --all`; `systemctl cat virtproxyd.socket virtproxyd-tcp.socket virtproxyd-tls.socket virtqemud.socket`; `journalctl -b -u ...` | 2026-07-31T21:11:44Z |
+| System libvirt read-only access | `virsh --readonly --connect qemu:///system version` succeeded; domain, network, and pool lists are empty; `dominfo mail-core-9000` returned `failed to get domain`, establishing that it is absent | `virsh --readonly --connect qemu:///system version`; `list --all`; `net-list --all`; `pool-list --all`; `dominfo mail-core-9000` | 2026-07-31T21:11:44Z |
+| Session libvirt read-only access | `virsh --readonly --connect qemu:///session version` and list/network/pool checks succeeded and are empty; `dominfo mail-core-9000` returned `failed to get domain` | `virsh --readonly --connect qemu:///session version`; `list --all`; `net-list --all`; `pool-list --all`; `dominfo mail-core-9000` | 2026-07-31T21:11:44Z |
+| Internal hostname observation | No local resolver result for `mail.home.arpa` | `getent hosts mail.home.arpa` | 2026-07-31T21:11:44Z |
+
+### Bootstrap disposition
+
+The required local QEMU and session read-only checks succeeded, the
+`mail-core-9000` domain is absent, and no libvirt network or pool exists.
+
+#### Operator acceptance — 2026-07-31
+
+The operator accepted the exact observed Fedora modular-libvirt socket preset,
+including local Unix-domain `virtproxyd.socket` compatibility access and the
+other installed local modular sockets. This acceptance is limited to the
+verified current state: no monolithic `libvirtd` stack, no
+`virtproxyd-tcp.socket` or `virtproxyd-tls.socket`, no TCP/TLS listener, and no
+created domain, network, or storage pool. It does not authorize additional
+socket/service activation or any construction mutation.
+
+Bootstrap classification: **completed and verified**. No socket unit was
+enabled, disabled, started, or stopped by the post-reboot work. The scoped
+acceptance expressly retains the local `virtproxyd.socket`; it must not be
+disabled solely because it was omitted from the original expected-unit list.
+The approved read-only construction inventory may now be dispatched. VM 9000
+creation remains prohibited.
