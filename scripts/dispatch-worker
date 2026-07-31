@@ -10,6 +10,13 @@ case "$input" in /*) candidate=$input;; *) candidate=$root/$input;; esac
 packet=$(readlink -f -- "$candidate")
 case "$packet" in "$root"/implementation/*) ;; *) echo 'error: packet escapes implementation directory' >&2; exit 2;; esac
 rel=${packet#"$root"/}
+profile_declarations=$(grep -c '^HOST_EVIDENCE_PROFILE=' "$packet" || true)
+case "$profile_declarations" in
+  0) profile=;;
+  1) profile=$(sed -n 's/^HOST_EVIDENCE_PROFILE=//p' "$packet")
+     [ "$profile" = 'matriarch-libvirt-readonly-v1' ] || { echo 'error: unsupported HOST_EVIDENCE_PROFILE declaration' >&2; exit 2; };;
+  *) echo 'error: packet has multiple HOST_EVIDENCE_PROFILE declarations' >&2; exit 2;;
+esac
 dirty=$(git status --porcelain --untracked-files=all)
 [ -z "$dirty" ] || { echo 'error: dirty worktree' >&2; printf '%s\n' "$dirty" >&2; exit 1; }
 ignored=$(git status --porcelain --ignored=matching --untracked-files=all | sed -n 's/^!! //p')
@@ -24,6 +31,7 @@ printf 'run ID: %s\ntmux session: %s\npacket: %s\nstarting commit: %s\nlog path:
 [ "$dry" = false ] || { echo 'dry run: would launch detached headless codex exec'; exit 0; }
 umask 077; mkdir -p "$root/handoff/runs"; mkdir "$run" || exit 1
 printf '%s\n' "$rel" >"$run/packet-path"; printf '%s\n' "$start" >"$run/start-commit"; date -u +%Y-%m-%dT%H:%M:%SZ >"$run/started-at"
+[ -z "$profile" ] || printf '%s\n' "$profile" >"$run/host-evidence-profile"
 cat >"$run/prompt.txt" <<EOF
 You are the implementation worker for helix-mail-core.
 

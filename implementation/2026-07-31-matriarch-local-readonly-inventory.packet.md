@@ -5,6 +5,8 @@ Status: approved read-only follow-up
 Target: the current local Fedora 44 Matriarch construction host
 Construction ID: `9000`; libvirt domain name: `mail-core-9000`
 
+HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1
+
 ## Authority
 
 The current local shell is the approved access path to Matriarch. Do not SSH or
