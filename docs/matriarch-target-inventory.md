@@ -210,3 +210,48 @@ specified; do not resume until the operator supplies a label of at most 12
 characters or changes the filesystem decision.
 
 Live mutation: creation of `/dev/nvme1n1p5` only.
+
+## Accepted storage construction state — 2026-07-31
+
+Packet: `implementation/2026-07-31-matriarch-mail-core-storage-construction.packet.md`
+
+Packet refinements: `3cc4fcc6dde54ecd2096bb15829c767ab6a71a91`,
+`df6f2fe78edf03959a4b66f7d32f33516ab70479`,
+`8626c17cded1d9d519f33147c23104bf9677289f`, and
+`2e0c6fc457468d93832de370eb06afe227805dfc`.
+
+Private execution evidence:
+`handoff/runs/20260731T220000Z-8626c17-storage-execution/`
+
+| Item | Verified state | Evidence / rationale |
+| --- | --- | --- |
+| GPT geometry | `p5` starts at `3175464960s`, ends at `3712335871s`, and is 536870912 sectors (256 GiB) | Final `parted -m` and `lsblk` checks. `p1` through `p4` retain their preflight boundaries. |
+| Filesystem | XFS on `/dev/nvme1n1p5`; filesystem label `mailcore-vm` | `blkid` label/type check and active mount verification. The XFS UUID was observed locally for fstab correlation and is intentionally not recorded in Git. |
+| Persistent mount | UUID-based fstab entry for `/var/lib/libvirt/mail-core`; source `/dev/nvme1n1p5` | Entry recorded with UUID redacted; `systemctl daemon-reload` followed by `findmnt --verify` passed without warnings. |
+| SELinux and ownership | Mountpoint and both volumes are `root:root`, mode `0755` / `0600`, context `virt_image_t` | Fedora `semanage fcontext` mapping limited to `/var/lib/libvirt/mail-core(/.*)?`, followed by `restorecon` and `ls -Z`. No SELinux disablement or broad custom policy. |
+| Libvirt pool | `mail-core-construction`, directory target `/var/lib/libvirt/mail-core`, persistent and running, autostart `no` | Pool definition and `pool-info`; mount source/UUID guard passed before pool and volume operations. |
+| System disk | `mail-core-9000-system.qcow2`, qcow2 virtual size 32 GiB, sparse | `qemu-img info --output=json`; actual initial allocation approximately 200 KiB. |
+| Mail-data disk | `mail-core-9000-data.qcow2`, qcow2 virtual size 192 GiB, sparse | `qemu-img info --output=json`; actual initial allocation approximately 200 KiB. |
+| Capacity | Pool filesystem capacity 255.88 GiB; available capacity 250.94 GiB after creation | `df -B1` and `virsh pool-info`. The 32 GiB reserve is an operating threshold, not physically reserved space. |
+| Construction encryption decision | No additional host-layer LUKS encryption for this temporary construction pool | Operator-approved construction-stage decision only; review final appliance encryption again before promotion readiness. |
+| Soak capacity guard | Warn or stop workload growth before host filesystem free space drops below 32 GiB | Required for subsequent soak/VM-construction work; no daemon or monitor was enabled by this storage packet. |
+| VM state | `mail-core-9000` absent | Read-only system libvirt `dominfo` remained absent after storage construction. |
+
+Construction-only inventory values are now fixed as:
+
+```text
+VM_STORAGE=mail-core-construction
+SYSTEM_DISK_REFERENCE=mail-core-construction/mail-core-9000-system.qcow2
+MAIL_DATA_STORAGE=mail-core-construction
+MAIL_DATA_DISK_REFERENCE=mail-core-construction/mail-core-9000-data.qcow2
+```
+
+These do not populate the production Proxmox value file or authorize VM
+construction. The live mutations were limited to p5 creation, XFS formatting,
+the UUID-based persistent mount definition and daemon reload, the path-specific
+SELinux file-context mapping, local directory creation, pool definition/start,
+and the two sparse qcow2 files. No VM, guest OS, libvirt network, NetworkManager,
+firewall, DNS, TLS, mail identity, credential, Fastmail, or reboot action
+occurred.
+
+Independent review classification: **ACCEPTED**.
