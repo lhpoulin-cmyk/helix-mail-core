@@ -1,6 +1,6 @@
 # Construction, soak testing, and promotion
 
-Construction placement is `hv-matriarch / mail-core / VMID 9000`. Its
+Construction placement is Fedora 44 Matriarch / `mail-core / VMID 9000`. Its
 lifecycle state is **construction / soak testing**. This placement is temporary;
 the durable identity is always `mail.home.arpa`.
 
@@ -15,7 +15,7 @@ documented backup/restore status. A passing test does not authorize promotion.
 During at least fourteen continuous calendar days, retain real internal mail
 traffic and observe authenticated submission, mailbox delivery, identity
 isolation, service/VM reboot recovery, queues, disk/mailbox growth, failed
-authentication, certificates, backup freshness, restore viability, Internet
+authentication, certificates, appliance-export freshness, restore viability, Internet
 outages, and (only if later authorized) Fastmail relay behavior. Significant
 faults, data-loss risk, unresolved relay behavior, or a configuration redesign
 restarts or extends the period.
@@ -35,10 +35,10 @@ At soak completion create a private-evidence-backed report containing:
 9. known limitations; and
 10. recommendation: promote, extend, or reject.
 
-## Promotion change
+## Handoff boundary
 
-A separately approved change selects the permanent hypervisor and production
-VMID; transfers or restores all persistent state; preserves `mail.home.arpa`;
-places it on approved storage/networking; verifies identities, mailboxes,
-queues, TLS, and backups; proves local delivery and no lost/duplicated
-messages; then archives or removes VM 9000 only after success.
+Soak completion produces a promotion-ready appliance export and state manifest.
+Production-hypervisor selection, production VMID, migration, and deployment
+are separate work. The handoff preserves `mail.home.arpa`, identities,
+mailboxes, queues, TLS, secrets, version information, export manifest, and
+restore instructions.

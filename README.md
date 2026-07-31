@@ -11,7 +11,8 @@ activation packet.
   records map to a deployed `hv-matrix`, which is not silently substituted.
 - Phase 1 foundation: complete and validation-ready.
 - Phase 2: render only; live VM, DNS, firewall, identities, certificates, and
-  relay remain uncreated.
+  relay remain uncreated. The construction outcome is a portable appliance
+  export, not production placement.
 
 Run `scripts/validate/all.sh` for static checks. Copy
 `inventory/production/values.env.example` to the ignored `values.env`, replace
@@ -20,4 +21,3 @@ only values established by an approved packet, then run
 
 No runtime data belongs in this repository. See `docs/operator-runbook.md` and
 `docs/backup-and-restore.md` before implementation.
-

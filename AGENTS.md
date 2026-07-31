@@ -46,9 +46,10 @@ authority remains elsewhere.
 ## Placement, migration, and completion
 
 The durable identity is `mail.home.arpa`; construction and soak placement is
-`hv-matriarch / VMID 9000`. The production VMID and permanent hypervisor remain
-unresolved until promotion. Host-specific values belong only in inventory or
-deployment configuration. No configuration may make Matriarch permanent.
+`hv-matriarch / VMID 9000`. Promotion, production VMID, and permanent
+hypervisor are outside this repository's construction scope. Host-specific
+values belong only in inventory or deployment configuration. No configuration
+may make Matriarch permanent.
 
 Call work complete only when relevant validation passes, documentation reflects
 deployed or proposed reality, Git has no secrets, restore and migration

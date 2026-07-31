@@ -11,9 +11,11 @@ Record sanitized outputs outside Git and promote facts only.
 
 **Success criteria:** identifies a host that the operator confirms is the
 provisional Matriarch target; a durable, independently restorable VM/data
-storage and backup target; approved internal bridge/VLAN/address/DNS/CA values;
+storage sufficient for VM 9000 and a consistent appliance export; approved
+internal bridge/VLAN/address/DNS/CA values;
 and verifies VMID 9000 availability.
 
-**Stop conditions:** target identity ambiguity, absent backup coverage,
-unapproved storage, no services VLAN, no DNS/CA owner, or occupied VMID 9000.
+**Stop conditions:** target identity ambiguity, insufficient VM 9000 storage,
+no appliance-export location, no services VLAN, no DNS/CA owner, or occupied
+VMID 9000.
 Render unresolved values and make no mutation.

@@ -16,7 +16,7 @@ no live host mutation was made during this work cycle.
 | Network | `vmbr0` management only; no services VLAN or non-management bridge | `NETWORKING.md` | observed historical |
 | Candidate infrastructure VLAN | none established | `NETWORKING.md` | unresolved |
 | DNS path | internal resolvers 192.168.10.251/.252 serve `.arpa`; no `home.arpa` evidence | `NETWORKING.md` | unresolved |
-| Backup target | deferred; recovery confidence is unverified | `VALIDATION.md`, `STORAGE.md` | unresolved |
+| Appliance export location | must be operator-provided for consistent portable export; Matriarch backup design is out of scope | construction boundary | unresolved |
 | TLS practice | portable-root certificate evidence exists, but no mail-CA issuance practice identified | Infrastructure inventory | unresolved |
 | Fresh name-resolution check | `getent hosts hv-matriarch hv-matriarch.arpa` returned no result; `hv-matrix` and `hv-matrix.arpa` resolved to `192.168.10.22` | local resolver, 2026-07-31 | observed |
 
@@ -26,8 +26,9 @@ The requested host name is not an established current host identity in the
 infrastructure records. The record states that historical `hv-matriarch`
 planning produced `hv-matrix`, but also says the original Matriarch
 workstation is separate. The actual target, storage backed by a VM restore
-path, services bridge/VLAN, guest address, DNS publication path, backup target,
-and internal certificate issuer must be freshly observed and approved.
+path, services bridge/VLAN, guest address, DNS publication path, appliance
+export location, and internal certificate issuer must be freshly observed and
+approved.
 
 Consequently, this repository renders a VM contract but does not select a
 datastore, bridge, VLAN, or address, and no live provisioning is authorized.

@@ -12,4 +12,4 @@ VLAN_TAG={{NETWORK_VLAN}}
 OS=Debian-current-supported-stable
 LIFECYCLE=construction-soak-testing
 PUBLIC_EXPOSURE=none
-BACKUP=enabled-after-backup-target-validation
+PORTABLE_EXPORT=required-before-soak-completion

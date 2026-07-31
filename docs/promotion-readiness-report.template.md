@@ -1,4 +1,4 @@
-# mail-core promotion-readiness report
+# mail-core construction handoff / promotion-readiness report
 
 - Construction VM: `hv-matriarch / VMID 9000`
 - Durable service identity: `mail.home.arpa`
@@ -15,8 +15,8 @@
 
 ## Failures, unexpected behavior, and changes
 
-## Backup and restore status
+## Appliance export and isolated restore status
 
 ## Known limitations
 
-## Promotion decision and required packet
+## Handoff result and separate promotion packet needed

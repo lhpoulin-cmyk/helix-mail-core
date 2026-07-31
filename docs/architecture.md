@@ -43,8 +43,10 @@ Persistent-state ownership is intentionally separated from the system disk:
 | Runtime secrets | `/etc/stalwart/secrets` | protected separately; never Git |
 | Logs | `/var/log/stalwart` | retention-defined, non-authoritative |
 | Reconstructable cache | none initially | exclude unless vendor requires it |
-| VM backup metadata | selected Proxmox backup target | retain with VM backup record |
+| Export manifest | appliance export bundle | retain with portable state artifact |
 
-The data virtual disk is mounted at `/srv/stalwart`; it must be a selected
-durable Proxmox datastore covered by a tested VM backup path, never host root,
-scratch, GPU storage, or an undocumented path.
+The data virtual disk is mounted at `/srv/stalwart`; VM 9000 must have enough
+construction-host storage for the soak workload and a consistent appliance
+export. This repository does not select or design Matriarch storage or backup
+systems. The data path must never be host root, scratch, GPU storage, or an
+undocumented path.
