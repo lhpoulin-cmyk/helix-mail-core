@@ -9,5 +9,6 @@ rg -q -- '--ephemeral' "$root/scripts/run-worker-headless"
 rg -q 'starting commit mismatch' "$root/scripts/run-worker-headless"
 rg -q 'worker-result.md' "$root/scripts/wait-worker-result"
 rg -q 'invalid ending commit' "$root/scripts/wait-worker-result"
+rg -q "tr -d" "$root/scripts/wait-worker-result"
 rg -q 'does not permit creation or mutation' "$root/scripts/dispatch-worker"
 echo 'PASS headless worker static assertions'

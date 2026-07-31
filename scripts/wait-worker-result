@@ -12,8 +12,8 @@ while [ ! -f "$run/exit-status" ] && [ "$(date +%s)" -le "$deadline" ]; do tmux 
 [ -f "$run/exit-status" ] || { echo 'timeout: worker still active' >&2; exit 1; }
 [ "$(cat "$run/exit-status")" = 0 ] || { echo "error: worker exited $(cat "$run/exit-status")" >&2; exit 1; }
 [ -f "$run/worker-result.md" ] || { echo 'error: successful worker has no result' >&2; exit 1; }
-reported=$(sed -n 's/^Starting commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]')
-end=$(sed -n 's/^Ending commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]')
+reported=$(sed -n 's/^Starting commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]`')
+end=$(sed -n 's/^Ending commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]`')
 [ "$reported" = "$start" ] || { echo 'error: result starting commit mismatch' >&2; exit 1; }
 git rev-parse --verify --quiet "$end^{commit}" >/dev/null || { echo 'error: invalid ending commit' >&2; exit 1; }
 git merge-base --is-ancestor "$start" "$end" || { echo 'error: ending commit does not descend from start' >&2; exit 1; }
