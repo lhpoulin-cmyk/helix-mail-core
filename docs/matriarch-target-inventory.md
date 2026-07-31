@@ -1,34 +1,56 @@
-# Phase 0 target inventory
+# Matriarch construction target inventory
 
-Capture timestamp: 2026-07-31. Classification: read-only repository evidence;
-no live host mutation was made during this work cycle.
+Status: blocked, fail-closed proposal only. This record does not authorize VM
+construction or any live mutation.
 
-| Item | Observation | Source | State |
-| --- | --- | --- | --- |
-| Construction placement | `hv-matriarch / VMID 9000` | operator instruction 2026-07-31 | proposed |
-| Historical name | Historical Matriarch planning became `hv-matrix` | Infrastructure `nodes/hv-matrix/README.md` | observed |
-| Current deployed hypervisor | `hv-matrix.arpa`, Proxmox VE 9.2.2 / Debian 13, 192.168.10.22 | Infrastructure capture 2026-07-27 | observed |
-| Workload class | GPU compute; no guest placement approved | same | observed |
-| Existing guests at baseline | none recorded 2026-07-27; VMID 9000 requires fresh live check | `VALIDATION.md` | stale for allocation |
-| Storage | `local` and `local-zfs` active; ~120.53 GiB each at capture | `STORAGE.md` | observed historical |
-| Candidate durable storage | none selected; only rpool-backed stores known | `STORAGE.md` | unresolved |
-| Unsafe storage | two ~1 TB NVMes are reserved, unmounted, and explicitly protected | `STORAGE.md` | observed exclusion |
-| Network | `vmbr0` management only; no services VLAN or non-management bridge | `NETWORKING.md` | observed historical |
-| Candidate infrastructure VLAN | none established | `NETWORKING.md` | unresolved |
-| DNS path | internal resolvers 192.168.10.251/.252 serve `.arpa`; no `home.arpa` evidence | `NETWORKING.md` | unresolved |
-| Appliance export location | must be operator-provided for consistent portable export; Matriarch backup design is out of scope | construction boundary | unresolved |
-| TLS practice | portable-root certificate evidence exists, but no mail-CA issuance practice identified | Infrastructure inventory | unresolved |
-| Fresh name-resolution check | `getent hosts hv-matriarch hv-matriarch.arpa` returned no result; `hv-matrix` and `hv-matrix.arpa` resolved to `192.168.10.22` | local resolver, 2026-07-31 | observed |
+Packet: `implementation/2026-07-31-matriarch-construction-inventory.packet.md`
+Collector: Codex implementation worker
+Private evidence reference: `/tmp/helix-mail-core-matriarch-inventory.t5EMdv`
+Collection timestamp: 2026-07-31T15:28:40Z
 
-## Placement conflict and stop condition
+The collection environment could not establish that it was the operator-confirmed
+Fedora 44 Matriarch host. It could not access `/dev/kvm` or host networking,
+and `virsh` was unavailable. Historical `hv-matrix` material is intentionally
+not used as evidence of current Matriarch state.
 
-The requested host name is not an established current host identity in the
-infrastructure records. The record states that historical `hv-matriarch`
-planning produced `hv-matrix`, but also says the original Matriarch
-workstation is separate. The actual target, storage backed by a VM restore
-path, services bridge/VLAN, guest address, DNS publication path, appliance
-export location, and internal certificate issuer must be freshly observed and
-approved.
+| Field | Value | Source | Timestamp (UTC) | Confidence | Confidence rationale |
+| --- | --- | --- | --- | --- | --- |
+| Confirmed Matriarch host identity | `UNRESOLVED` | `hostnamectl` (exit 1; private evidence reference) | 2026-07-31T15:28:40Z | low | The command could not connect to the system bus, so it supplies no host identity. |
+| KVM availability | `UNRESOLVED` | `test -e /dev/kvm` (exit 1; private evidence reference) | 2026-07-31T15:28:40Z | high | `/dev/kvm` was not accessible in the collection environment; this does not establish Matriarch capability. |
+| Libvirt system URI availability | `UNRESOLVED` | `virsh -c qemu:///system uri` (exit 127; private evidence reference) | 2026-07-31T15:28:40Z | high | `virsh` was unavailable, so no libvirt system connection was made. |
+| Domain `mail-core-9000` existence/name availability | `UNRESOLVED` | `virsh -c qemu:///system list --all --name`; `virsh -c qemu:///system dominfo mail-core-9000` (both exit 127; private evidence reference) | 2026-07-31T15:28:40Z | high | Neither command executed; the construction ID was not compared with a libvirt runtime ID. |
+| Construction storage placement | `UNRESOLVED` | `virsh -c qemu:///system pool-list --all` (exit 127; private evidence reference) | 2026-07-31T15:28:40Z | high | No storage-pool facts were collected; no pool was selected or inspected further. |
+| Isolated mail-data placement | `UNRESOLVED` | No approved storage pool identified; `virsh -c qemu:///system pool-list --all` (exit 127; private evidence reference) | 2026-07-31T15:28:40Z | high | Targeted capacity evidence cannot be collected until an operator identifies or approves a pool. |
+| Existing network attachment | `UNRESOLVED` | `virsh -c qemu:///system net-list --all` (exit 127); `ip -brief link` and `ip -brief address` (exit 1; private evidence reference) | 2026-07-31T15:28:40Z | high | Libvirt and netlink inspection were unavailable; no bridge or VLAN is inferred. |
+| Proposed guest IP configuration | `UNRESOLVED` | `ip -brief address`; `ip route` (both exit 1; private evidence reference) | 2026-07-31T15:28:40Z | high | No guest address, gateway, or resolver may be invented from an inaccessible host network. |
+| `home.arpa` DNS ownership/path | `UNRESOLVED` | `getent hosts mail.home.arpa` (exit 2; private evidence reference) | 2026-07-31T15:28:40Z | medium | The name did not resolve from the collection environment; that does not establish DNS ownership or the authoritative internal path. |
+| Internal TLS issuance, trust, renewal, and replacement practice | `UNRESOLVED` | No direct read-only evidence or established operator authority supplied | 2026-07-31T15:28:40Z | high | No issuer, trust anchor, renewal, or replacement practice is assumed. |
+| `APPLIANCE_EXPORT_REFERENCE` status | `UNRESOLVED` | Implementation packet and operator input supplied no opaque reference; destination not accessed | 2026-07-31T15:28:40Z | high | The required opaque reference is absent and its destination remains out of scope. |
 
-Consequently, this repository renders a VM contract but does not select a
-datastore, bridge, VLAN, or address, and no live provisioning is authorized.
+## Read-only collection result
+
+All packet-listed commands were attempted only as read-only queries. The
+following outcomes are recorded in the private evidence manifest at the
+reference above: `hostnamectl` exit 1; `test -e /dev/kvm` exit 1; all five
+`virsh` queries exit 127; `ip -brief link`, `ip -brief address`, and `ip route`
+exit 1; and `getent hosts mail.home.arpa` exit 2. No targeted pool query was
+run because no pool was identified or approved by the operator.
+
+## Validation and render result
+
+`scripts/validate/all.sh` passed at 2026-07-31T15:29:34Z (exit 0): all required
+files, JSON syntax, secret scan, fail-closed relay policy, and unresolved
+production-example guard passed.
+`scripts/render/render.sh inventory/production/values.env.example` refused at
+2026-07-31T15:29:34Z (exit 2): `unresolved or unsafe: VM_STORAGE`. This is the
+expected fail-closed result and did not produce a deployable definition.
+
+## Stop condition
+
+Stop without live mutation: the confirmed Matriarch identity is ambiguous;
+KVM/libvirt availability and the `mail-core-9000` name cannot be established;
+and required storage, isolated data placement, network attachment, guest IP
+configuration, DNS ownership/path, TLS practice, and
+`APPLIANCE_EXPORT_REFERENCE` remain unresolved.
+
+Live mutation: none.
