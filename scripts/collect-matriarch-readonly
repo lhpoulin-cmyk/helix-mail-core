@@ -47,12 +47,16 @@ export LC_ALL
 
 candidate() {
   case "$1" in
-    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl) path=/usr/bin/$1;;
-    cat|uname|date|test) path=/usr/bin/$1;;
+    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl|cat|uname|date|test) ;;
     *) return 1;;
   esac
-  [ -z "$test_root" ] || path=$test_root$path
-  [ -x "$path" ] && printf '%s\n' "$path"
+  # Candidate order is repository-controlled; inherited PATH is never searched.
+  for directory in /usr/bin /usr/sbin /bin /sbin; do
+    path=$directory/$1
+    [ -z "$test_root" ] || path=$test_root$path
+    [ -x "$path" ] && { printf '%s\n' "$path"; return 0; }
+  done
+  return 1
 }
 
 sanitize() {
