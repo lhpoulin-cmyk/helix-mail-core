@@ -144,7 +144,7 @@ bridge, VLAN, libvirt, storage, or VM state was changed.
 | Checkpoint capability | NetworkManager 1.56.1 does not expose an `nmcli` checkpoint command. `/usr/bin/systemd-run` is present (systemd 259) and can arm a local timed rollback independent of network reachability. |
 | Separate default path | IPv4 default route is static on `eno1`, metric 100; fingerprint `2777bf8bfd1476209ae8`. It is not a Lab-10 route and must remain unchanged. |
 | Resolver verification target | Two current resolver addresses are configured on `eno1`; set fingerprint `e1f289695a33f4307409`. `ws-matriarch.arpa` resolves through that configured resolver path; name fingerprint `82b6505c6e6360db`. |
-| Lab-10 peer verification target | No target established. The one current `enp7s0` neighbor in `REACHABLE` state did not answer a one-second interface-bound ICMP probe. |
+| Lab-10 peer verification target | `192.168.100.20`, operator-nominated and evidenced on the connected Lab-10 route. Its neighbor state is `REACHABLE` (MAC fingerprint `c2df397396993060`), and a one-probe interface-bound ARP request received a reply. ICMP is filtered and is not the verification method. |
 
 Credential-bearing NetworkManager settings were intentionally not read. The
 active profile is wired Ethernet and the captured non-secret settings contain
@@ -296,23 +296,22 @@ route must remain on its independent Lab 2.5GbE path; and `eno1` and
 `eno1.80` must match their invariant fingerprints. The resolver must retain
 its existing internal DNS server set and `arpa` search domain.
 
-Before final execution authorization, nominate one currently reachable Lab-10
-peer only. Immediately before the transition, the executor must prove its
-route and reachability, then repeat the same proof against the bridge:
+Immediately before the transition, the executor must prove the route and
+Layer-2 reachability of the evidence-derived Lab-10 peer, then repeat the same
+proof against the bridge:
 
 ```bash
-LAB10_PEER='OPERATOR-NOMINATED-REACHABLE-LAB10-PEER'
+LAB10_PEER='192.168.100.20'
 ip route get "$LAB10_PEER" | grep -F ' dev enp7s0 '
-ping -n -c 1 -W 1 -I enp7s0 "$LAB10_PEER"
+arping -c 1 -w 2 -I enp7s0 "$LAB10_PEER"
 # After the bridge transition:
 ip route get "$LAB10_PEER" | grep -F ' dev br-lab10 '
-ping -n -c 1 -W 1 -I br-lab10 "$LAB10_PEER"
+arping -c 1 -w 2 -I br-lab10 "$LAB10_PEER"
 ```
 
 No Lab-10 gateway is requested or permitted: this attachment has no gateway
-and no default route by design. The internal DNS name and resolver target are
-now evidence-derived. The missing Lab-10 peer is the sole remaining
-verification-target stop condition. If manual rollback is required before the
+and no default route by design. The Lab-10 peer, internal DNS name, and
+resolver target are evidence-derived. If manual rollback is required before the
 timer fires, run the timer's rollback script unchanged:
 
 ```bash
@@ -321,10 +320,9 @@ sudo /run/mail-core-br-lab10/rollback
 
 ### Disposition
 
-**Execution is not recommended now.** The host profile and independent
+**Ready for final execution authorization.** The host profile and independent
 management fallback are suitable for a guarded bridge transition; a local
 timed rollback is available; the default `eno1` route and resolver checks are
-evidence-derived; and no Lab-10 gateway is needed. One currently reachable
-Lab-10 peer remains unestablished by evidence. Supply only that peer, then
-re-run the stale-state gates and request final activation authorization. No VM
-9000 work is authorized.
+evidence-derived; and the Lab-10 peer has a verified route and ARP response.
+No Lab-10 gateway is needed. Re-run the stale-state gates immediately before
+any activation. No VM 9000 work is authorized.
