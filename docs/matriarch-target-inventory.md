@@ -258,3 +258,92 @@ firewall, DNS, TLS, mail identity, credential, Fastmail, or reboot action
 occurred.
 
 Independent review classification: **ACCEPTED**.
+
+## Network attachment discovery — 2026-07-31
+
+Packet: `implementation/2026-07-31-mail-core-network-decision.packet.md`
+
+Evidence profile: `matriarch-network-readonly-v1`
+
+Private evidence reference:
+`handoff/runs/20260731T220648Z-5b59090-52043/host-evidence/`
+
+Evidence manifest:
+`handoff/runs/20260731T220648Z-5b59090-52043/host-evidence/manifest.sha256`
+
+Collection time: 2026-07-31T22:06:48Z through 2026-07-31T22:06:49Z
+
+This section records only the supervisor-verified evidence supplied for this
+run. The evidence manifest verified successfully before this record was
+written. No host inspection was performed by this worker; every host-related
+conclusion below is limited to the cited evidence items.
+
+### Observed state
+
+`eno1` is active with NetworkManager connection `Lab 2.5GbE`; `enp7s0` is
+active with `Lab 10GbE`; and VLAN device `eno1.80` is active with `Lab Admin
+VLAN 80`. These interfaces have host addresses and connected routes, but their
+observations do not establish approval for a stable guest attachment or select
+an internal-services network. `evidence-03-ip-link.txt`,
+`evidence-04-ip-address.txt`, `evidence-05-ip-route.txt`,
+`evidence-08-nm-devices.txt`, and `evidence-09-nm-active.txt`, all collected
+at 2026-07-31T22:06:48Z.
+
+The only observed Linux bridge is `podman0`, with `veth0` as its bridge port;
+it is an externally connected Podman bridge. It is not evidence of an approved
+cluster-reachable mail attachment. `evidence-03-ip-link.txt`,
+`evidence-06-bridge-link.txt`, and `evidence-08-nm-devices.txt`, collected at
+2026-07-31T22:06:48Z.
+
+The active firewall zones associate `eno1`, `enp7s0`, and `eno1.80` with
+`FedoraWorkstation`; this does not select a guest network or authorize a
+firewall change. `evidence-10-firewall-zones.txt`, collected at
+2026-07-31T22:06:48Z. The system libvirt connection was available, but its
+network inventory was empty. `evidence-11-system-version.txt` and
+`evidence-12-system-networks.txt`, collected at 2026-07-31T22:06:49Z.
+
+### Decision 3 — network attachment
+
+NETWORK_ATTACHMENT=UNRESOLVED_OPERATOR_NETWORK_ATTACHMENT
+
+**Recommendation:** keep the value unresolved. When the operator approves an
+internal-services network, the practical attachment is a dedicated
+operator-approved Linux bridge directly attached to that approved physical
+interface or approved VLAN, with the future domain connected to that bridge.
+That architecture can provide stable cluster-reachable internal addressing
+without public exposure or port-forwarding fragility, but the current evidence
+does not identify the approved parent interface/VLAN, bridge name, or address
+authority. It therefore cannot establish that an existing attachment carries
+the required address.
+
+**The one Decision 3 choice:** accept the recommendation to keep
+`NETWORK_ATTACHMENT` unresolved, or explicitly approve the recommended
+operator-approved Linux-bridge attachment. No other Decision 3 alternative is
+presented by this record.
+
+If approved in a later bounded packet, the exact live changes must be limited
+to: create the specifically named Linux bridge; attach only the specifically
+approved physical interface or VLAN as its port; migrate only the approved host
+network configuration to that bridge if required; and attach
+`mail-core-9000` to that bridge. The exact parent, VLAN, bridge name, host
+configuration, guest address, gateway, resolvers, DNS ownership, TLS, and
+firewall policy remain unresolved and must be validated before any such work.
+Changing an active physical or VLAN attachment can interrupt host connectivity;
+the rollback path is to detach the proposed bridge attachment, restore the
+previously captured NetworkManager connection/profile and its IP configuration
+to the original approved parent, and remove only the new bridge after the
+host's prior connectivity is verified. This is a proposed future procedure,
+not authorization to perform it.
+
+Macvtap is inferior because it may prevent reliable host-to-guest
+communication. Libvirt NAT is inferior because no defined system libvirt
+network exists in this evidence and NAT would not itself provide the required
+approved internal reachability without additional exposure or port-forwarding
+dependencies. Reusing `podman0` is inferior because its observed port is a
+Podman veth and no evidence approves it for mail traffic.
+
+### Stop condition
+
+Stop after Decision 3. No approved internal-services attachment is established
+by this evidence; guest address, gateway, resolver, DNS, TLS, firewall, and VM
+work remain outside this packet. Live mutation during this discovery run: none.
