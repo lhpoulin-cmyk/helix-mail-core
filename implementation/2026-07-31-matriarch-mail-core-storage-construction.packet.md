@@ -116,6 +116,7 @@ tmp_fstab=/etc/fstab.mail-core.$$
 sudo -n cp -a /etc/fstab "$tmp_fstab"
 printf 'UUID=%s /var/lib/libvirt/mail-core xfs defaults 0 2\n' "$new_uuid" | sudo -n tee -a "$tmp_fstab" >/dev/null
 sudo -n mv -f "$tmp_fstab" /etc/fstab
+sudo -n systemctl daemon-reload
 sudo -n findmnt --verify
 sudo -n mount /var/lib/libvirt/mail-core
 sudo -n findmnt --target /var/lib/libvirt/mail-core
@@ -158,7 +159,9 @@ After final operator approval of the preflight render:
 4. Obtain the newly created filesystem UUID locally and append one exact
    UUID-based fstab line with `defaults` only if no mountpoint entry already
    exists. Preserve a restricted, recoverable fstab backup in the evidence
-   directory. Validate with `findmnt --verify`; stop on a validation error.
+   directory. Run `systemctl daemon-reload` only to load this persistent mount
+   definition; it must not enable or start any unit. Validate with
+   `findmnt --verify`; stop on a validation error.
 5. Mount only `/var/lib/libvirt/mail-core` from the new `p5`; verify source,
    XFS type, label, UUID correlation, and free capacity. Do not mount any
    other storage.
