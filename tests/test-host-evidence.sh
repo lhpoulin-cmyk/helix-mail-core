@@ -64,10 +64,9 @@ repo=$scratch/repo
 git clone -q "$root" "$repo"
 cp "$root/scripts/collect-matriarch-readonly" "$repo/scripts/collect-matriarch-readonly"
 cp "$root/scripts/run-worker-headless" "$repo/scripts/run-worker-headless"
+cp "$root/scripts/supervise-worker-headless" "$repo/scripts/supervise-worker-headless"
 cp "$root/scripts/dispatch-worker" "$repo/scripts/dispatch-worker"
 cp "$root/implementation/2026-07-31-matriarch-local-readonly-inventory.packet.md" "$repo/implementation/2026-07-31-matriarch-local-readonly-inventory.packet.md"
-git -C "$repo" add scripts/collect-matriarch-readonly scripts/run-worker-headless scripts/dispatch-worker implementation/2026-07-31-matriarch-local-readonly-inventory.packet.md
-git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm 'test collector harness'
 cat >"$fakebin/codex" <<'EOF'
 #!/bin/sh
 if [ "${FAKE_CODEX_ACTION-}" = replace-evidence ]; then
@@ -84,11 +83,11 @@ make_run() {
   : >"$run/prompt.txt"
 }
 make_run "$scratch/run-changed"
-if (cd "$repo" && PATH="$fakebin:$PATH" FAKE_LOG="$scratch/runner.log" FAKE_CODEX_ACTION=replace-evidence HELIX_RUN_DIR="$scratch/run-changed" "$repo/scripts/run-worker-headless"); then
+if (cd "$repo" && PATH="$fakebin:$PATH" FAKE_LOG="$scratch/runner.log" FAKE_CODEX_ACTION=replace-evidence HELIX_RUN_DIR="$scratch/run-changed" "$repo/scripts/supervise-worker-headless"); then
   echo 'FAIL worker evidence replacement accepted' >&2; exit 1
 fi
 make_run "$scratch/run-nonzero"
-if (cd "$repo" && PATH="$fakebin:$PATH" FAKE_LOG="$scratch/runner.log" FAKE_CODEX_STATUS=7 HELIX_RUN_DIR="$scratch/run-nonzero" "$repo/scripts/run-worker-headless"); then
+if (cd "$repo" && PATH="$fakebin:$PATH" FAKE_LOG="$scratch/runner.log" FAKE_CODEX_STATUS=7 HELIX_RUN_DIR="$scratch/run-nonzero" "$repo/scripts/supervise-worker-headless"); then
   echo 'FAIL nonzero Codex exit accepted' >&2; exit 1
 fi
 [ "$(cat "$scratch/run-nonzero/exit-status")" = 7 ]

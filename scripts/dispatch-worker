@@ -30,7 +30,7 @@ start=$(git rev-parse HEAD); run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse 
 printf 'run ID: %s\ntmux session: %s\npacket: %s\nstarting commit: %s\nlog path: %s/worker.log\n' "$run_id" "$session" "$rel" "$start" "$run"
 [ "$dry" = false ] || { echo 'dry run: would launch detached headless codex exec'; exit 0; }
 umask 077; mkdir -p "$root/handoff/runs"; mkdir "$run" || exit 1
-printf '%s\n' "$rel" >"$run/packet-path"; printf '%s\n' "$start" >"$run/start-commit"; date -u +%Y-%m-%dT%H:%M:%SZ >"$run/started-at"
+printf '%s\n' "$rel" >"$run/packet-path"; printf '%s\n' "$start" >"$run/start-commit"
 [ -z "$profile" ] || printf '%s\n' "$profile" >"$run/host-evidence-profile"
 cat >"$run/prompt.txt" <<EOF
 You are the implementation worker for helix-mail-core.
@@ -52,5 +52,5 @@ Run all required validation. Commit completed repository changes as one bounded 
 Do not create the next packet. Do not approve your own work. Do not modify foreman doctrine. Stop after writing the result and exit.
 EOF
 printf '%s %s\n' "$run_id" "$session" >"$active.tmp"; mv "$active.tmp" "$active"
-if ! tmux new-session -d -s "$session" -c "$root" env HELIX_RUN_DIR="$run" "$root/scripts/run-worker-headless"; then rm -f "$active"; echo 'error: tmux launch failed' >&2; exit 1; fi
+if ! tmux new-session -d -s "$session" -c "$root" env HELIX_RUN_DIR="$run" "$root/scripts/supervise-worker-headless"; then rm -f "$active"; echo 'error: tmux launch failed' >&2; exit 1; fi
 printf 'dispatched: %s\n' "$run_id"

@@ -1,0 +1,98 @@
+#!/bin/sh
+# Trusted outer process supervisor.  It owns host collection and final run
+# metadata; scripts/run-worker-headless intentionally only execs Codex.
+set -u
+
+run=${1:-${HELIX_RUN_DIR:-}}
+[ -n "$run" ] && [ -d "$run" ] || { echo 'error: invalid run directory' >&2; exit 2; }
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 2
+root=$(CDPATH= cd -- "$root" && pwd -P)
+
+stage=initialization
+codex_status=not-started
+child_pid=
+child_kind=
+
+atomic_write() {
+  field=$1 value=$2
+  tmp=$run/."$field".$$.tmp
+  umask 077
+  printf '%s\n' "$value" >"$tmp" && mv -f -- "$tmp" "$run/$field"
+}
+
+finish() {
+  status=$1
+  [ "$status" -eq 0 ] && failure_stage=none || failure_stage=$stage
+  atomic_write failure-stage "$failure_stage" || true
+  atomic_write codex-exit-status "$codex_status" || true
+  atomic_write finished-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+  atomic_write exit-status "$status" || true
+  active=$root/handoff/active-run
+  if [ -f "$active" ] && grep -q "^$(basename "$run") " "$active"; then rm -f -- "$active"; fi
+}
+
+interrupted() {
+  signal=$1 status=$2
+  stage="$signal-$stage"
+  if [ -n "$child_pid" ]; then
+    kill -"$signal" "$child_pid" 2>/dev/null || true
+    wait "$child_pid" 2>/dev/null
+    child_status=$?
+    [ "$child_kind" != codex ] || codex_status=$child_status
+    child_pid=
+  fi
+  finish "$status"
+  exit "$status"
+}
+trap 'interrupted TERM 143' TERM
+trap 'interrupted INT 130' INT
+
+# This is deliberately the first operation after confirming the run directory.
+atomic_write started-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || exit 2
+
+fail() { stage=$1; finish "$2"; exit "$2"; }
+verify_evidence() {
+  evidence=$1
+  [ -d "$evidence" ] && [ ! -L "$evidence" ] || return 1
+  [ -f "$evidence/manifest.sha256" ] && [ ! -L "$evidence/manifest.sha256" ] || return 1
+  [ -z "$(find "$evidence" -mindepth 1 -type l -print -quit)" ] || return 1
+  [ -z "$(find "$evidence" -mindepth 1 ! -type f -print -quit)" ] || return 1
+  actual=$(find "$evidence" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | sort)
+  expected=$(awk '{print $2}' "$evidence/manifest.sha256"; printf '%s\n' manifest.sha256 | sort)
+  [ "$actual" = "$expected" ] || return 1
+  (cd -- "$evidence" && sha256sum -c manifest.sha256 >/dev/null)
+}
+
+start=$(/bin/cat "$run/start-commit" 2>/dev/null) || fail preflight 2
+[ "$(git rev-parse HEAD)" = "$start" ] || fail preflight 2
+[ -z "$(git status --porcelain --untracked-files=all)" ] || fail preflight 2
+profile=$(/bin/cat "$run/host-evidence-profile" 2>/dev/null || true)
+case "$profile" in ''|matriarch-libvirt-readonly-v1) ;; *) fail preflight 2;; esac
+evidence=$run/host-evidence
+
+if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
+  stage=collection
+  HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" "$evidence" &
+  child_pid=$! child_kind=collector
+  wait "$child_pid"; collection_status=$?
+  child_pid=
+  [ "$collection_status" -eq 0 ] || fail collection "$collection_status"
+  stage=evidence-preflight
+  verify_evidence "$evidence" || fail evidence-preflight 1
+fi
+
+stage=codex
+HELIX_RUN_DIR=$run "$root/scripts/run-worker-headless" >"$run/worker.log" 2>&1 &
+child_pid=$! child_kind=codex
+wait "$child_pid"; codex_status=$?
+child_pid=
+
+if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
+  stage=evidence-postflight
+  verify_evidence "$evidence" || fail evidence-postflight 1
+fi
+[ "$codex_status" -eq 0 ] || fail codex "$codex_status"
+[ -f "$run/worker-result.md" ] && [ ! -L "$run/worker-result.md" ] || fail worker-result 1
+stage=complete
+finish 0
+exit 0

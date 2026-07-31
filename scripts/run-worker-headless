@@ -1,36 +1,9 @@
 #!/bin/sh
+# Codex execution path only.  Collection and all completion metadata belong to
+# scripts/supervise-worker-headless, outside this process.
 set -u
 run=${1:-${HELIX_RUN_DIR:-}}
 [ -n "$run" ] && [ -d "$run" ] || { echo 'error: invalid run directory' >&2; exit 2; }
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 2
 root=$(CDPATH= cd -- "$root" && pwd -P)
-start=$(/bin/cat "$run/start-commit")
-[ "$(git rev-parse HEAD)" = "$start" ] || { echo 'error: starting commit mismatch' >&2; exit 2; }
-[ -z "$(git status --porcelain --untracked-files=all)" ] || { echo 'error: dirty starting worktree' >&2; exit 2; }
-profile=$(/bin/cat "$run/host-evidence-profile" 2>/dev/null || true)
-case "$profile" in ''|matriarch-libvirt-readonly-v1) ;; *) echo 'error: invalid host evidence profile' >&2; exit 2;; esac
-evidence=$run/host-evidence
-verify_evidence() {
-  [ -d "$evidence" ] && [ ! -L "$evidence" ] || return 1
-  [ -f "$evidence/manifest.sha256" ] && [ ! -L "$evidence/manifest.sha256" ] || return 1
-  [ -z "$(find "$evidence" -mindepth 1 -type l -print -quit)" ] || return 1
-  [ -z "$(find "$evidence" -mindepth 1 ! -type f -print -quit)" ] || return 1
-  actual=$(find "$evidence" -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | sort)
-  expected=$(awk '{print $2}' "$evidence/manifest.sha256"; printf '%s\n' manifest.sha256 | sort)
-  [ "$actual" = "$expected" ] || return 1
-  (cd -- "$evidence" && sha256sum -c manifest.sha256 >/dev/null)
-}
-if [ "$profile" = 'matriarch-libvirt-readonly-v1' ]; then
-  HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" "$evidence" || exit 2
-  verify_evidence || { echo 'error: host evidence failed pre-worker integrity verification' >&2; exit 2; }
-fi
-status=0
-codex exec --sandbox workspace-write --cd "$root" --ephemeral --color never -o "$run/codex-last-message.txt" - <"$run/prompt.txt" >"$run/worker.log" 2>&1 || status=$?
-[ "$profile" != 'matriarch-libvirt-readonly-v1' ] || verify_evidence || { echo 'error: host evidence changed during worker execution' >&2; status=1; }
-printf '%s\n' "$status" >"$run/.exit-status.tmp"
-mv "$run/.exit-status.tmp" "$run/exit-status"
-date -u +%Y-%m-%dT%H:%M:%SZ >"$run/.finished-at.tmp"
-mv "$run/.finished-at.tmp" "$run/finished-at"
-active=$root/handoff/active-run
-if [ -f "$active" ] && grep -q "^$(basename "$run") " "$active"; then rm -f "$active"; fi
-exit "$status"
+exec codex exec --sandbox workspace-write --cd "$root" --ephemeral --color never -o "$run/codex-last-message.txt" - <"$run/prompt.txt"

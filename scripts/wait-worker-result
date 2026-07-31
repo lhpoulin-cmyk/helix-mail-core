@@ -9,8 +9,12 @@ if [ -z "$run_id" ]; then run_id=$(find "$runs" -mindepth 1 -maxdepth 1 -type d 
 run=$runs/$run_id; [ -d "$run" ] || { echo 'error: run not found' >&2; exit 2; }
 start=$(cat "$run/start-commit"); session="mail-worker-$run_id"; deadline=$(( $(date +%s) + timeout ))
 while [ ! -f "$run/exit-status" ] && [ "$(date +%s)" -le "$deadline" ]; do tmux has-session -t "$session" 2>/dev/null || { echo 'error: worker session vanished without exit status' >&2; exit 1; }; sleep 2; done
-[ -f "$run/exit-status" ] || { echo 'timeout: worker still active' >&2; exit 1; }
+[ -f "$run/started-at" ] && [ -f "$run/failure-stage" ] && [ -f "$run/codex-exit-status" ] && [ -f "$run/finished-at" ] && [ -f "$run/exit-status" ] || { echo 'error: worker completion metadata is missing' >&2; exit 1; }
+grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' "$run/started-at" "$run/finished-at" || { echo 'error: invalid worker timestamps' >&2; exit 1; }
+grep -Eq '^[0-9]+$' "$run/exit-status" || { echo 'error: invalid worker exit status' >&2; exit 1; }
 [ "$(cat "$run/exit-status")" = 0 ] || { echo "error: worker exited $(cat "$run/exit-status")" >&2; exit 1; }
+[ "$(cat "$run/failure-stage")" = none ] || { echo 'error: successful worker has failure metadata' >&2; exit 1; }
+[ "$(cat "$run/codex-exit-status")" = 0 ] || { echo 'error: successful worker has invalid Codex status' >&2; exit 1; }
 [ -f "$run/worker-result.md" ] || { echo 'error: successful worker has no result' >&2; exit 1; }
 reported=$(sed -n 's/^[- ][- ]*Starting commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]`')
 end=$(sed -n 's/^[- ][- ]*Ending commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]`')

@@ -11,6 +11,15 @@ log, worker result, exit status, and timestamps. A real dispatch starts
 `mail-worker-<RUN_ID>`. Inspect it with `tmux attach -t mail-worker-<RUN_ID>`;
 detaching does not terminate the worker.
 
+The tmux command is the trusted outer supervisor, not Codex itself. It writes
+`started-at` before preflight, collects any approved evidence before Codex is
+launched, and atomically records `failure-stage`, `codex-exit-status`,
+`finished-at`, and overall `exit-status` on ordinary and TERM/INT exits.
+`scripts/run-worker-headless` is deliberately the Codex-only execution path:
+it cannot invoke the collector. A zero Codex exit without `worker-result.md`
+is a failed run. SIGKILL, host loss, and any unknown completion state are never
+accepted as completion.
+
 Packets that declare the exact metadata-only line
 `HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1` receive a fresh
 `host-evidence/` directory before Codex starts. The fixed collector uses only
@@ -27,7 +36,8 @@ dangerous bypass flags or network-enabling settings are used. Human approval
 boundaries remain unchanged. The packet remains task authority.
 
 After dispatch, use `scripts/wait-worker-result --timeout 1800 <RUN_ID>`. It
-only verifies handoff integrity; it never accepts work. A stale active marker
+rejects missing or malformed finalization metadata and only verifies handoff
+integrity; it never accepts work. A stale active marker
 must be removed manually only after confirming its tmux session no longer
 exists and that no worker process remains. Do not kill an apparently active
 worker automatically.
