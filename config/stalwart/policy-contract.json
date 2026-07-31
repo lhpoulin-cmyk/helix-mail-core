@@ -1,0 +1,22 @@
+{
+  "service": "Stalwart Mail Server",
+  "version_pin": "0.16.4",
+  "domain": "home.arpa",
+  "listeners": {
+    "smtp_submission": { "port": 587, "tls": "starttls-required", "authentication": "required" },
+    "imaps": { "port": 993, "tls": "implicit-required", "authentication": "required" },
+    "jmap": { "enabled": false, "tls": "required-if-enabled", "internal_only": true },
+    "smtp_port_25": { "enabled": false },
+    "pop3": { "enabled": false },
+    "managesieve": { "enabled": false }
+  },
+  "recipient_policy": {
+    "local_domain": "home.arpa",
+    "unknown_local_recipient": "reject",
+    "unauthenticated_submission": "reject",
+    "external_recipients": "reject",
+    "domain_allow_relaying": false
+  },
+  "fastmail": { "enabled": false, "host": "smtp.fastmail.com", "sender": "cluster_admin@fastmail.com" }
+}
+

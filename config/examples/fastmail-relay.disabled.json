@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "host": "smtp.fastmail.com",
+  "port": 465,
+  "implicit_tls": true,
+  "username": "cluster_admin@fastmail.com",
+  "password_source": "protected-runtime-secret-only",
+  "allowed_message_classes": ["operator-approved-selected-notification"],
+  "deny_message_classes": ["routine-log", "telemetry", "repeated-monitoring", "bulk"],
+  "failure_policy": "retain-queue-or-classify-failed-never-discard"
+}
+

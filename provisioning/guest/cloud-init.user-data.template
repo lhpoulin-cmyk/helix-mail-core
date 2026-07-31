@@ -1,0 +1,9 @@
+#cloud-config
+hostname: mail-core
+fqdn: mail.home.arpa
+manage_etc_hosts: true
+package_update: false
+packages: []
+# Bootstrap only: installation, credentials, TLS, and relay are separate,
+# operator-approved guest configuration steps.
+
