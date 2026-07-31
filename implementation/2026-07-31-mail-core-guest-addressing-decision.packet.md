@@ -13,9 +13,19 @@ BRIDGE_PARENT=enp7s0
 BRIDGE_MTU=9000
 ```
 
+Operator Decision 4 additionally freezes:
+
+```
+GUEST_NETWORK_MODEL=single-nic
+ROUTER=netbrain
+```
+
 Do not reopen, alter, deactivate, or recreate `br-lab10`, `enp7s0`,
 `eno1`, or `eno1.80`. No VM, libvirt network, NetworkManager, DHCP,
 route, DNS, firewall, or other live configuration mutation is authorized.
+Do not bridge the guest into Admin VLAN 80, attach a second guest NIC, use
+libvirt NAT or macvtap, or infer a Lab-10 gateway from the host's separate
+network paths.
 
 ## Purpose
 
