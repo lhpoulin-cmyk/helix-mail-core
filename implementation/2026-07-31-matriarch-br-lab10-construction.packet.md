@@ -380,3 +380,18 @@ and network inventories were empty: no VM 9000 or libvirt network was created.
 
 Stop after this verified bridge construction. VM 9000 creation or definition
 remains unauthorized.
+
+## Frozen network values
+
+Network construction was accepted at commit `55f0648`. The following values
+are frozen for subsequent construction decisions:
+
+```
+NETWORK_ATTACHMENT=br-lab10
+BRIDGE_PARENT=enp7s0
+BRIDGE_MTU=9000
+```
+
+Do not reopen or modify `br-lab10`, `enp7s0`, `eno1`, or `eno1.80`
+unless later verification establishes an actual defect and a separately
+reviewed packet authorizes a correction.
