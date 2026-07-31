@@ -1,8 +1,22 @@
 # Matriarch construction target inventory
 
-Status: proposed, validated, and non-deployable. This inventory records only
-the supervisor-verified evidence supplied for this run. It does not authorize
-VM construction or any live mutation.
+Status: Matriarch libvirt bootstrap completed and verified; the construction
+inventory is proposed, validated, and non-deployable. This inventory records
+only the supervisor-verified evidence supplied for this run. It does not
+authorize VM construction or any live mutation.
+
+## Bootstrap verification and accepted socket state
+
+The post-reboot bootstrap verification was committed as
+`f1ab8fcc2f9a0b00b3f2ea25650d7a7c24aa0f3e`. The operator accepted the exact
+Fedora modular-libvirt socket preset observed there, including local Unix-domain
+`virtproxyd.socket` compatibility access. This scoped acceptance does not
+authorize additional socket/service activation or any construction mutation.
+The accepted state has no monolithic `libvirtd` stack, no
+`virtproxyd-tcp.socket` or `virtproxyd-tls.socket`, no TCP/TLS listener, and
+no created domain, network, or storage pool. Do not disable local
+`virtproxyd.socket` solely because it was absent from the original expected-unit
+list.
 
 Packet: `implementation/2026-07-31-matriarch-construction-inventory.packet.md`
 Collector: Codex implementation worker
@@ -22,6 +36,7 @@ cite only the supplied evidence items.
 | Confirmed Matriarch host identity | `ws-matriarch`, Fedora Linux 44 | `host-evidence/evidence-01-hostnamectl.txt`: `hostnamectl`; `host-evidence/evidence-02-fedora-release.txt`: `cat /etc/fedora-release` | 2026-07-31T21:15:56Z | high | Direct host identity and operating-system observations at collection time. |
 | KVM availability | `/dev/kvm` present | `host-evidence/evidence-05-dev-kvm.txt`: `test -e /dev/kvm` (exit 0) | 2026-07-31T21:15:56Z | high | The recorded successful existence test directly establishes device presence at collection time. |
 | System libvirt availability | Available through `qemu:///system`; QEMU hypervisor reported as `10.2.2` | `host-evidence/evidence-06-system-version.txt`: `virsh --readonly --connect qemu:///system version` (exit 0); `host-evidence/evidence-24-virtqemud-status.txt`: `systemctl is-active virtqemud` (`active`) | 2026-07-31T21:15:56Z; 2026-07-31T21:15:58Z | high | The required read-only system connection succeeded, and the QEMU modular daemon was active. `libvirtd` was inactive in evidence 23, but that does not negate the successful modular system connection. |
+| Session libvirt availability | Available through `qemu:///session`; QEMU hypervisor reported as `10.2.2`; no session domains, networks, or pools observed; `mail-core-9000` absent in this separate plane | `host-evidence/evidence-11-session-version.txt` through `evidence-15-session-dominfo.txt`: read-only `qemu:///session` queries | 2026-07-31T21:15:56Z through 2026-07-31T21:15:57Z | high | All session-plane read-only queries succeeded; this is distinct from, and does not replace, the system construction plane. |
 | Domain `mail-core-9000` existence/name availability | Absent; name available at collection time | `host-evidence/evidence-07-system-domains.txt`: `virsh --readonly --connect qemu:///system list --all` (empty, exit 0); `host-evidence/evidence-10-system-dominfo.txt`: `virsh --readonly --connect qemu:///system dominfo mail-core-9000` (exit 1; `failed to get domain`) | 2026-07-31T21:15:56Z | high | The system domain list was empty and the targeted lookup reported no such domain. No numeric libvirt runtime ID was used. |
 | System libvirt network inventory | No defined system libvirt networks observed | `host-evidence/evidence-08-system-networks.txt`: `virsh --readonly --connect qemu:///system net-list --all` (empty, exit 0) | 2026-07-31T21:15:56Z | high | The required system network-list query completed successfully and returned no entries. |
 | System libvirt storage-pool inventory | No defined system libvirt storage pools observed | `host-evidence/evidence-09-system-pools.txt`: `virsh --readonly --connect qemu:///system pool-list --all` (empty, exit 0) | 2026-07-31T21:15:56Z | high | The required system pool-list query completed successfully and returned no entries. |
@@ -60,4 +75,6 @@ ownership/path, internal TLS practice, and `APPLIANCE_EXPORT_REFERENCE` status
 remain unresolved. The packet does not authorize their selection or any VM
 construction.
 
-Live mutation: none.
+Live mutation during this inventory run: none. The earlier approved package
+transaction and verified bootstrap state are recorded in commit
+`f1ab8fcc2f9a0b00b3f2ea25650d7a7c24aa0f3e`.
