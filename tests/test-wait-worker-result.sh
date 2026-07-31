@@ -50,7 +50,12 @@ expect_vanished_session() {
   fi
 }
 result() { printf 'Starting commit: %s\nEnding commit: %s\n' "$1" "$2"; }
+assert_plain_result() {
+  expected=$(printf 'Starting commit: %s\nEnding commit: %s' "$start" "$end")
+  [ "$(result "$start" "$end")" = "$expected" ]
+}
 
+assert_plain_result
 make_run plain
 write_result plain "$(result "$start" "$end")"
 expect_accept plain

@@ -20,7 +20,7 @@ cat >"$fakebin/codex" <<'EOF'
 #!/bin/sh
 printf 'codex\n' >>"$FAKE_LOG"
 case ${FAKE_CODEX_MODE-success} in missing) exit 0;; nonzero) exit 37;; evidence-post-fail) printf 'changed\n' >"$HELIX_RUN_DIR/host-evidence/evidence-01-fake.txt";; term) trap 'exit 43' INT; kill -INT "$PPID"; sleep 1; exit 43;; esac
-printf '%s\n' 'fake result' >"$HELIX_RUN_DIR/worker-result.md"
+printf 'Starting commit: %s\nEnding commit: %s\n' "$(cat "$HELIX_RUN_DIR/start-commit")" "$(git rev-parse HEAD)" >"$HELIX_RUN_DIR/worker-result.md"
 EOF
 chmod +x "$fakebin/codex"
 git -C "$repo" add scripts/collect-matriarch-readonly scripts/run-worker-headless scripts/supervise-worker-headless scripts/wait-worker-result
@@ -32,6 +32,8 @@ make_run "$scratch/success" matriarch-libvirt-readonly-v1
 run_supervisor "$scratch/success"
 assert_metadata "$scratch/success" 0 none 0
 grep -qx collector "$scratch/calls.log"; grep -qx codex "$scratch/calls.log"
+grep -Eq '^Starting commit: [0-9a-f]{40}$' "$scratch/success/worker-result.md"
+grep -Eq '^Ending commit: [0-9a-f]{40}$' "$scratch/success/worker-result.md"
 make_run "$scratch/missing"
 if FAKE_CODEX_MODE=missing run_supervisor "$scratch/missing"; then echo 'FAIL missing result accepted' >&2; exit 1; fi
 assert_metadata "$scratch/missing" 1 worker-result 0

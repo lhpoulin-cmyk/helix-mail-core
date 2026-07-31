@@ -68,13 +68,15 @@ Execute only the packet at:
 
     $rel
 
-Starting commit:
-
-    $start
+Starting commit: $start
 
 Do not expand scope. The packet is the sole task authority. It does not permit creation or mutation of a VM, libvirt domain, storage pool, network, NetworkManager configuration, DNS record, certificate, credential, package, service, or Fastmail configuration.
 
 Run all required validation. Commit completed repository changes as one bounded implementation commit. Write the factual result to $result_path including packet path, starting commit, ending commit, files changed, tests run, tests passed and failed, unresolved values, live-state observations and evidence timestamps, live mutation status, and exact stop reason if blocked.
+
+The result must contain exactly one plain, unbackticked, standalone full 40-lowercase-hex line for each commit, in these forms:
+Starting commit: $start
+Ending commit: <full 40-lowercase-hex ending commit>
 
 Do not create the next packet. Do not approve your own work. Do not modify foreman doctrine. Stop after writing the result and exit.
 EOF
