@@ -78,3 +78,89 @@ construction.
 Live mutation during this inventory run: none. The earlier approved package
 transaction and verified bootstrap state are recorded in commit
 `f1ab8fcc2f9a0b00b3f2ea25650d7a7c24aa0f3e`.
+
+## Storage discovery — 2026-07-31
+
+Packet: `implementation/2026-07-31-matriarch-vm-storage-discovery.packet.md`
+
+Evidence profile: `matriarch-storage-readonly-v1`
+
+Private evidence reference:
+`handoff/runs/20260731T213059Z-2ee5e6e-30364/host-evidence/`
+
+Evidence manifest:
+`handoff/runs/20260731T213059Z-2ee5e6e-30364/host-evidence/manifest.sha256`
+
+Collection time: 2026-07-31T21:30:59Z
+
+This section records only the supervisor-verified evidence supplied for this
+storage-discovery run. No host inspection was performed by this worker, and no
+host-related conclusion below relies on earlier inventory evidence or
+historical device names.
+
+### Evidence limits
+
+`df --bytes` failed because that option was not recognized, so the bundle does
+not establish filesystem free capacity. `pvs`, `vgs`, and `lvs` were
+permission-denied; consequently LVM ownership, allocation, and free capacity
+are unverified. `zpool` and `zfs` were unavailable, so ZFS state is
+unverified. `btrfs filesystem show` observed the `fedora` filesystem but also
+reported a permission error and a missing device path; it cannot establish
+available capacity or an allocation suitable for reuse. These limits are
+recorded respectively in `host-evidence/evidence-03-df.txt`,
+`evidence-05-pvs.txt` through `evidence-07-lvs.txt`,
+`evidence-09-zpool.txt`, `evidence-10-zfs.txt`, and
+`evidence-08-btrfs.txt`, all collected at 2026-07-31T21:30:59Z.
+
+### Candidate classification
+
+| Observed location | Classification | Evidence-cited facts and consequence |
+| --- | --- | --- |
+| `/dev/sda` (31,037,849,600 bytes; USB) | unsuitable — ownership unknown | It is an encrypted LUKS device with no mountpoint. The bundle supplies no owner, capacity-free, or reuse approval evidence; do not treat the absent mountpoint as unused. `host-evidence/evidence-01-lsblk.txt`, 2026-07-31T21:30:59Z. |
+| `/dev/sdb` and its `LAB-VENTOY`, `VTOYEFI`, and `lab-vault` partitions | unsuitable — active unrelated use | The USB device already contains exFAT, FAT16, and LUKS partitions with those labels. Its existing layout presents collision and data-loss risk. `host-evidence/evidence-01-lsblk.txt`, 2026-07-31T21:30:59Z. |
+| `/dev/zram0` | unsuitable — active unrelated use | It is an active swap device (`[SWAP]`). `host-evidence/evidence-01-lsblk.txt`, 2026-07-31T21:30:59Z. |
+| `/dev/nvme1n1` and its Fedora partitions | unsuitable — active unrelated use | Its EFI, `/boot`, and Btrfs partitions support the current root, `/home`, and container-storage mounts. The Btrfs observation also reports 1.09 TiB used, but not usable free capacity. `host-evidence/evidence-01-lsblk.txt`, `evidence-02-findmnt.txt`, and `evidence-08-btrfs.txt`, 2026-07-31T21:30:59Z. |
+| `/dev/nvme0n1` and its existing partitions | unsuitable — ownership unknown | It contains existing VFAT, NTFS, ext4, and Btrfs partitions, including `bazzite_xboot` and `bazzite_bazzite`. No ownership/reuse approval, free-capacity, or consumer evidence establishes a safe allocation, even though no mountpoint is shown. `host-evidence/evidence-01-lsblk.txt`, 2026-07-31T21:30:59Z. |
+| Existing filesystem paths and managed storage | unverified | The observed local root and NFS paths are already mounted; their free capacity and storage-management ownership are not established for VM use. LVM and ZFS observations are incomplete, and no libvirt-pool observation is in this profile. `host-evidence/evidence-02-findmnt.txt`, `evidence-03-df.txt`, `evidence-05-pvs.txt` through `evidence-10-zfs.txt`, 2026-07-31T21:30:59Z. |
+
+### Decision 1 proposal — system and mail-data storage
+
+**Completion classification:** STORAGE REQUIRES OPERATOR NOMINATION
+
+No safe candidate is identified. The observed devices are either already in
+unrelated use, contain existing data with ownership unknown, or have
+inconclusive management and free-capacity evidence. In particular, no evidence
+in this run supports a storage-pool name, a directory path, an unused block
+device, or available space sufficient for the proposed 32 GiB system disk and
+64 GiB separate mail-data disk.
+
+| Decision item | Proposal |
+| --- | --- |
+| Recommended VM system-disk location | UNRESOLVED; operator must nominate a durable location for targeted read-only verification. |
+| Recommended separate mail-data location | UNRESOLVED; operator must nominate a separately approved durable location. |
+| Separate volumes in one existing storage pool | UNRESOLVED; this profile contains no libvirt-pool observation and no evidence of pool free capacity or ownership. |
+| Current format and ownership | No nominated location. Observed formats and their classifications are listed above; ownership suitable for reuse is not evidenced. |
+| Available capacity | UNRESOLVED; `df` failed and LVM queries were permission-denied. |
+| Collision and data-loss risks | Reusing any observed populated, encrypted, mounted, swap, or otherwise unapproved location can collide with unrelated data or consumers. |
+| Later implementation requirements | UNRESOLVED pending nomination. A later approved implementation may require a libvirt storage pool or approved directories, and may require qcow2 or raw volumes; formatting, partitioning, or mount changes are not authorized or proposed by this packet. |
+
+Exact proposed values remain fail-closed:
+
+```text
+VM_STORAGE=UNRESOLVED_DURABLE_STORAGE
+SYSTEM_DISK_REFERENCE=UNRESOLVED_OPERATOR_NOMINATION
+MAIL_DATA_STORAGE=UNRESOLVED_DURABLE_DATA_STORAGE
+MAIL_DATA_DISK_REFERENCE=UNRESOLVED_OPERATOR_NOMINATION
+```
+
+`MAIL_DATA_STORAGE` denotes the Decision 1 proposal name; the current render
+contract continues to use `VM_DATA_STORAGE` and remains
+`UNRESOLVED_DURABLE_DATA_STORAGE`. No value above authorizes a pool, directory,
+disk image, format, partition, mount change, or VM creation.
+
+### Stop condition
+
+Stop at Decision 1. An operator nomination and a separately authorized
+targeted read-only verification are required before a system-disk location can
+be selected. Do not proceed to network or guest-address decisions. Live
+mutation during this storage-discovery run: none.
