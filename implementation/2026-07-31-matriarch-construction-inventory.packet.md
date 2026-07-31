@@ -6,6 +6,8 @@ Target: Fedora 44 Matriarch; construction ID `9000`; libvirt domain
 `mail-core-9000`
 Service identity: `mail.home.arpa`
 
+HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1
+
 ## Objective
 
 Collect only the current facts needed to produce a fail-closed construction
