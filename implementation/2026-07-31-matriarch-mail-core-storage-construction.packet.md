@@ -1,7 +1,7 @@
 # Matriarch mail-core storage construction packet
 
 Date: 2026-07-31
-Status: operator-authorized bounded mutation; exact preflight render required
+Status: operator-authorized bounded mutation; resume from verified unformatted p5
 Target: `ws-matriarch`, Fedora 44
 Construction ID: `9000`; domain name: `mail-core-9000`
 
@@ -29,7 +29,7 @@ is authorized.
 | --- | --- |
 | Host disk | `/dev/nvme1n1` |
 | New sibling partition | `/dev/nvme1n1p5`, 256 GiB |
-| Filesystem | XFS, label `mail-core-vmstore` |
+| Filesystem | XFS, label `mailcore-vm` |
 | Mountpoint | `/var/lib/libvirt/mail-core` |
 | Persistent mount | one UUID-based `/etc/fstab` entry for that mountpoint |
 | Libvirt pool | `mail-core-construction`, type `dir`, target `/var/lib/libvirt/mail-core` |
@@ -51,8 +51,9 @@ without mutation on any failure, ambiguity, pre-existing target, or mismatch.
    the accepted evidence: `p1` mounted at `/boot/efi`, `p2` at `/boot`, `p3`
    Btrfs-mounted at `/`, `/home`, and container storage, and `p4` remains an
    unmounted ext4 `OS_TESTING` partition.
-2. Confirm `/dev/nvme1n1p5` does not exist, no `mail-core-vmstore` filesystem
-   label exists, the mountpoint is absent or empty and not mounted, the
+2. Confirm `/dev/nvme1n1p5` exists only at the exact approved boundaries,
+   has no filesystem `TYPE` or label, no `mailcore-vm` filesystem label exists,
+   the mountpoint is absent or empty and not mounted, the
    `mail-core-construction` pool does not exist, and neither qcow2 volume
    exists anywhere in the target directory.
 3. Capture a recoverable GPT backup using `sfdisk --dump /dev/nvme1n1` into
@@ -89,25 +90,19 @@ after the pre-mutation gates pass in the same run.
 sudo -n sfdisk --dump /dev/nvme1n1 >"$RUN_DIR/nvme1n1.gpt.pre.sfdisk"
 sudo -n parted -s /dev/nvme1n1 unit s print free
 sudo -n lsblk --bytes --output NAME,PATH,TYPE,SIZE,START,FSTYPE,LABEL,MOUNTPOINTS /dev/nvme1n1
-sudo -n blkid -L mail-core-vmstore
+sudo -n blkid -L mailcore-vm
 sudo -n findmnt --target /var/lib/libvirt/mail-core
 sudo -n virsh --readonly --connect qemu:///system pool-info mail-core-construction
 
-# write: create only p5 in the exact confirmed tail, then safely reread it
-sudo -n parted -s /dev/nvme1n1 unit s mkpart mail-core-vmstore xfs 3175464960s 3712335871s
-sudo -n partprobe /dev/nvme1n1
-sudo -n udevadm settle --timeout=15
-sudo -n parted -s /dev/nvme1n1 unit s print
-sudo -n lsblk --bytes --output NAME,PATH,TYPE,SIZE,START,FSTYPE,LABEL,MOUNTPOINTS /dev/nvme1n1
-
-# write: create the filesystem only after p5's exact boundaries are verified
+# p5 was already created and safely reread at the exact approved boundaries.
+# write: create the filesystem only after its empty TYPE/label are verified
 # A GPT PARTUUID is expected on a newly created partition; reject only an
 # existing filesystem TYPE or filesystem label.
 existing_type=$(sudo -n blkid -s TYPE -o value /dev/nvme1n1p5 2>/dev/null || true)
 existing_label=$(sudo -n blkid -s LABEL -o value /dev/nvme1n1p5 2>/dev/null || true)
 test -z "$existing_type"
 test -z "$existing_label"
-sudo -n mkfs.xfs -L mail-core-vmstore /dev/nvme1n1p5
+sudo -n mkfs.xfs -L mailcore-vm /dev/nvme1n1p5
 new_uuid=$(sudo -n blkid -s UUID -o value /dev/nvme1n1p5)
 test -n "$new_uuid"
 
@@ -151,7 +146,7 @@ After final operator approval of the preflight render:
    `partprobe` and `udevadm settle`, verify that it is partition number 5 with
    start `3175464960s`, end `3712335871s`, and exactly 256 GiB. Stop before
    formatting if the kernel cannot reread the table safely; do not reboot.
-2. Run `mkfs.xfs -L mail-core-vmstore /dev/nvme1n1p5` exactly once. Before the
+2. Run `mkfs.xfs -L mailcore-vm /dev/nvme1n1p5` exactly once. Before the
    command, re-check that `p5` has no filesystem `TYPE` or label and is the
    new partition on the approved disk. Its GPT `PARTUUID` is expected and is
    not a filesystem signature. Do not force or overwrite an existing
