@@ -326,3 +326,57 @@ timed rollback is available; the default `eno1` route and resolver checks are
 evidence-derived; and the Lab-10 peer has a verified route and ARP response.
 No Lab-10 gateway is needed. Re-run the stale-state gates immediately before
 any activation. No VM 9000 work is authorized.
+
+## Execution record — 2026-07-31T22:55:07Z
+
+**Authority:** operator authorization of this packet at commit `2f6d6ae`.
+
+### Live mutations performed
+
+1. Created NetworkManager bridge profile `br-lab10`.
+2. Created NetworkManager Ethernet bridge-port profile
+   `mail-core-br-lab10-enp7s0-port`, bound only to `enp7s0`.
+3. Created the restricted runtime rollback script and armed
+   `mail-core-br-lab10-rollback.timer` for 180 seconds. The timer was
+   confirmed active before the parent transition.
+4. Disabled autoconnect on the retained `Lab 10GbE` profile, deactivated it,
+   activated `br-lab10`, and activated its sole `enp7s0` port.
+5. After every verification passed, stopped the rollback timer and removed
+   only its temporary runtime script and directory.
+
+No profile other than the approved parent, bridge, and bridge-port profiles was
+created, changed, or deleted. No VLAN, firewall policy, DNS record, libvirt
+network, storage, VM, TLS, credential, or mail configuration mutation occurred.
+
+### Verification results
+
+All immediate pre-mutation gates passed: authorized commit, clean repository,
+`ws-matriarch` identity, captured parent-profile fingerprint, independent
+`eno1` default-route fingerprint, resolver-set fingerprint, internal DNS
+lookup, Lab-10 ARP reachability, established SSH on the separate Lab 2.5GbE
+path, and local `seat0` / `tty2` fallback.
+
+Post-activation verification passed while the rollback timer remained armed:
+
+- `br-lab10` is connected as a bridge at MTU 9000.
+- `enp7s0` is connected at MTU 9000 as the sole forwarding port of
+  `br-lab10`.
+- The prior Lab-10 IPv4 address and its connected non-default route are on
+  `br-lab10`; no Lab-10 gateway or default route exists.
+- The evidence-derived Lab-10 peer routes through `br-lab10` and replies to
+  the interface-bound ARP probe.
+- The original default route remains unchanged on `eno1`; the established
+  SSH management path remains on that separate interface.
+- Resolver-set and `ws-matriarch.arpa` checks passed.
+- `eno1` and `eno1.80` matched their pre-mutation invariant fingerprints.
+- The `FedoraWorkstation` zone includes `br-lab10`; no firewall policy was
+  changed.
+
+An independent read-only review at the timestamp above repeated those bridge,
+route, resolver, firewall-zone, and Lab-10 ARP checks. System libvirt domain
+and network inventories were empty: no VM 9000 or libvirt network was created.
+
+**Disposition:** ACCEPTED.
+
+Stop after this verified bridge construction. VM 9000 creation or definition
+remains unauthorized.
