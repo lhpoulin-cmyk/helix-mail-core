@@ -182,3 +182,31 @@ Stop at Decision 1. An operator nomination and a separately authorized
 targeted read-only verification are required before a system-disk location can
 be selected. Do not proceed to network or guest-address decisions. Live
 mutation during this storage-discovery run: none.
+
+## Storage construction execution — 2026-07-31
+
+Packet: `implementation/2026-07-31-matriarch-mail-core-storage-construction.packet.md`
+
+Private execution evidence:
+`handoff/runs/20260731T215600Z-df6f2fe-storage-execution/`
+
+The immediate preflight matched the reviewed GPT layout. `/dev/nvme1n1p4`
+ended at sector `3175464959`; the free tail began at `3175464960`. Only
+`/dev/nvme1n1p5` was created, with exact boundaries `3175464960` through
+`3712335871` inclusive (536870912 sectors, 256 GiB). The kernel reread the
+partition table successfully. Partitions `p1` through `p4` were not changed.
+
+The first attempt stopped before formatting because its generic `blkid` guard
+treated the expected new GPT `PARTUUID` as a filesystem signature. The guard
+was corrected and committed as `df6f2fe78edf03959a4b66f7d32f33516ab70479`.
+The resumed pre-format check established that `p5` had no filesystem `TYPE` or
+label. `mkfs.xfs` then rejected `mail-core-vmstore` before writing because XFS
+labels are limited to 12 characters and the requested label is 17 characters.
+
+Current state: `p5` is unformatted and unmounted; no fstab entry, mountpoint,
+SELinux mapping, libvirt storage pool, qcow2 volume, network, domain, or VM
+was created. No reboot occurred. The requested XFS label cannot be applied as
+specified; do not resume until the operator supplies a label of at most 12
+characters or changes the filesystem decision.
+
+Live mutation: creation of `/dev/nvme1n1p5` only.
