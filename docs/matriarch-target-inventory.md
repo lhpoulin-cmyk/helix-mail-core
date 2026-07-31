@@ -1,7 +1,20 @@
 # Matriarch construction target inventory
 
-Status: blocked, fail-closed proposal only. This record does not authorize VM
-construction or any live mutation.
+Status: paused by operator. This record does not authorize VM construction or
+any further live mutation.
+
+## Operator pause — 2026-07-31
+
+Matriarch libvirt bootstrap is deferred because a reboot/maintenance window is
+unavailable. The Katra construction path was discussed but is not authorized.
+Existing packets, collected evidence, and commits are preserved unchanged.
+
+The earlier approved Fedora package transaction was completed before this
+pause; it is the only recorded live host mutation. No VM, libvirt domain,
+network, storage pool, disk, DNS, firewall, certificate, credential, service
+activation, or access-control mutation occurred. Resume requires an explicit
+operator instruction and a newly reviewed packet; it must not be inferred from
+this record.
 
 Packet: `implementation/2026-07-31-matriarch-construction-inventory.packet.md`
 Collector: Codex implementation worker
