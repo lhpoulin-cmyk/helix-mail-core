@@ -117,3 +117,186 @@ and final network state. Stop after bridge verification. Guest addressing,
 gateway and resolver selection, authoritative DNS mutation, TLS, firewall
 policy, libvirt-network work, and VM 9000 remain separate decisions and are
 not authorized by this packet.
+
+## Read-only capture and rendered plan — 2026-07-31
+
+**Capture authority:** operator authorization following commit `ac2a354`;
+read-only inspection and command rendering only.
+**Capture result:** no NetworkManager profile, device, route, firewall, DNS,
+bridge, VLAN, libvirt, storage, or VM state was changed.
+
+### Sanitized captured state
+
+| Item | Captured state |
+| --- | --- |
+| Host | `ws-matriarch` |
+| Parent | `enp7s0`, connected Ethernet, MTU 9000, no bridge controller or port relationship |
+| Active parent profile | `Lab 10GbE`; UUID fingerprint `ae9c31ec1260`; bound to `enp7s0`; autoconnect enabled with priority `-999` |
+| Parent IPv4 | Manual single address on the Lab-10 /24; no gateway; route metric 50; never-default; no explicit routes or DNS server |
+| Parent IPv6 | Automatic; no configured address, gateway, route, or DNS server; no default-route suppression |
+| Parent DNS | Search domain `arpa`; automatic DNS/routes are not suppressed |
+| Effective firewall zone | `FedoraWorkstation` |
+| Parent profile fingerprint | `dece40ae70dc8dc3f542`, over the selected non-secret migration properties |
+| `eno1` invariant | Separate connected Ethernet profile `Lab 2.5GbE`, UUID fingerprint `cd485ca99948`, MTU 1500; invariant fingerprint `fd3a7f133792829c0c6b` |
+| `eno1.80` invariant | Separate connected VLAN profile `Lab Admin VLAN 80`, UUID fingerprint `8bc7828068f6`, MTU 1500, VLAN 80 parented by `eno1`; invariant fingerprint `0c8c2b412348e94a18ea` |
+| Existing unrelated bridge | `podman0` only; it has a Podman veth port and is not part of this operation |
+| Current management | The observed established SSH management session terminates on Lab 2.5GbE, not Lab 10GbE. A logged-in local `seat0` / `tty2` session is also present. Both are independent of `enp7s0`. |
+| Checkpoint capability | NetworkManager 1.56.1 does not expose an `nmcli` checkpoint command. `/usr/bin/systemd-run` is present (systemd 259) and can arm a local timed rollback independent of network reachability. |
+
+Credential-bearing NetworkManager settings were intentionally not read. The
+active profile is wired Ethernet and the captured non-secret settings contain
+no controller, secondary connection, configured gateway, explicit route, or
+explicit DNS-server value that must be translated. Raw connection UUIDs, MAC
+addresses, and host addresses remain out of Git.
+
+### Stale-state gates
+
+The following read-only gates are mandatory immediately before any future
+execution. Each must succeed before a profile is created or modified:
+
+```bash
+set -euo pipefail
+PARENT='Lab 10GbE'
+BRIDGE='br-lab10'
+PORT='mail-core-br-lab10-enp7s0-port'
+EXPECTED_PARENT_FP='dece40ae70dc8dc3f542'
+EXPECTED_ENO1_FP='fd3a7f133792829c0c6b'
+EXPECTED_ENO180_FP='0c8c2b412348e94a18ea'
+FIELDS='connection.id,connection.type,connection.interface-name,connection.autoconnect,connection.autoconnect-priority,connection.zone,802-3-ethernet.mtu,ipv4.method,ipv4.dns,ipv4.dns-search,ipv4.dns-options,ipv4.dns-priority,ipv4.addresses,ipv4.gateway,ipv4.routes,ipv4.route-metric,ipv4.route-table,ipv4.routing-rules,ipv4.never-default,ipv4.ignore-auto-routes,ipv4.ignore-auto-dns,ipv4.may-fail,ipv6.method,ipv6.dns,ipv6.dns-search,ipv6.dns-options,ipv6.dns-priority,ipv6.addresses,ipv6.gateway,ipv6.routes,ipv6.route-metric,ipv6.route-table,ipv6.routing-rules,ipv6.never-default,ipv6.ignore-auto-routes,ipv6.ignore-auto-dns,ipv6.may-fail'
+
+test "$(hostname -s)" = ws-matriarch
+test "$(nmcli -g GENERAL.CONNECTION device show enp7s0)" = "$PARENT"
+test "$(nmcli -g GENERAL.TYPE device show enp7s0)" = ethernet
+test "$(nmcli -g GENERAL.MTU device show enp7s0)" = 9000
+test "$(nmcli -g "$FIELDS" connection show "$PARENT" | sha256sum | cut -c1-20)" = "$EXPECTED_PARENT_FP"
+test -z "$(nmcli -g GENERAL.CONNECTION device show eno1 | grep -Fx "$PARENT" || true)"
+test -z "$(nmcli -g GENERAL.CONNECTION device show eno1.80 | grep -Fx "$PARENT" || true)"
+test -z "$(nmcli -g NAME connection show "$BRIDGE" 2>/dev/null || true)"
+test -z "$(nmcli -g NAME connection show "$PORT" 2>/dev/null || true)"
+```
+
+The executor must also recompute the two invariant fingerprints using the
+captured commands before and after the transition. Any mismatch, a new bridge
+relationship on `enp7s0`, or any change to `eno1` or `eno1.80` stops the
+run before activation.
+
+### Exact future NetworkManager render
+
+The following is the complete future mutation render. It is **not authorized
+to run in this cycle**. It derives the existing non-secret IP properties at
+execution time only after the stale-state gates pass, rather than putting host
+addresses or UUIDs in Git.
+
+```bash
+IPV4_ADDRESSES="$(nmcli -g ipv4.addresses connection show "$PARENT")"
+IPV4_DNS_SEARCH="$(nmcli -g ipv4.dns-search connection show "$PARENT")"
+
+sudo nmcli connection add type bridge ifname "$BRIDGE" con-name "$BRIDGE" \
+  connection.autoconnect yes connection.autoconnect-priority -999 \
+  connection.zone FedoraWorkstation 802-3-ethernet.mtu 9000 \
+  ipv4.method manual ipv4.addresses "$IPV4_ADDRESSES" \
+  ipv4.dns-search "$IPV4_DNS_SEARCH" ipv4.route-metric 50 \
+  ipv4.never-default yes ipv4.ignore-auto-routes no \
+  ipv4.ignore-auto-dns no ipv4.may-fail yes \
+  ipv6.method auto ipv6.never-default no ipv6.ignore-auto-routes no \
+  ipv6.ignore-auto-dns no ipv6.may-fail yes
+
+sudo nmcli connection add type ethernet ifname enp7s0 con-name "$PORT" \
+  controller "$BRIDGE" port-type bridge connection.autoconnect yes \
+  802-3-ethernet.mtu 9000 ipv4.method disabled ipv6.method disabled
+```
+
+The bridge receives the prior effective firewall-zone attachment
+(`FedoraWorkstation`); this does not alter firewall policy. The port carries
+no host-layer address, route, gateway, resolver configuration, or VLAN. The
+original `Lab 10GbE` profile remains present for rollback; its autoconnect is
+temporarily disabled only while `br-lab10` carries the equivalent host role.
+
+### Exact timed rollback render
+
+Because installed `nmcli` has no checkpoint subcommand, future execution
+must use this local 180-second systemd timer. It must be armed and verified
+before deactivating the parent profile. Its service restores the original
+profile and removes only the two newly created profiles.
+
+```bash
+sudo install -d -m 0700 /run/mail-core-br-lab10
+sudo tee /run/mail-core-br-lab10/rollback >/dev/null <<'EOF'
+#!/usr/bin/bash
+set -u
+/usr/bin/nmcli connection down id br-lab10 || true
+/usr/bin/nmcli connection down id mail-core-br-lab10-enp7s0-port || true
+/usr/bin/nmcli connection delete id mail-core-br-lab10-enp7s0-port || true
+/usr/bin/nmcli connection delete id br-lab10 || true
+/usr/bin/nmcli connection modify id 'Lab 10GbE' connection.autoconnect yes connection.autoconnect-priority -999
+/usr/bin/nmcli connection up id 'Lab 10GbE' ifname enp7s0
+EOF
+sudo chmod 0700 /run/mail-core-br-lab10/rollback
+sudo systemd-run --unit=mail-core-br-lab10-rollback --on-active=180s --collect \
+  /run/mail-core-br-lab10/rollback
+systemctl is-active mail-core-br-lab10-rollback.timer
+```
+
+After the timer is confirmed active, the only permitted activation transition
+is:
+
+```bash
+sudo nmcli connection modify id "$PARENT" connection.autoconnect no
+sudo nmcli connection down id "$PARENT"
+sudo nmcli connection up id "$BRIDGE"
+sudo nmcli connection up id "$PORT" ifname enp7s0
+```
+
+Only after every verification below succeeds may the executor cancel the timer
+and remove its temporary script:
+
+```bash
+sudo systemctl stop mail-core-br-lab10-rollback.timer
+sudo rm -f /run/mail-core-br-lab10/rollback
+sudo rmdir /run/mail-core-br-lab10
+```
+
+If any step or check fails, do not cancel the timer. The timer is the primary
+rollback mechanism. A local console on `seat0` / `tty2` and the independent
+Lab 2.5GbE management path are the observed management fallbacks.
+
+### Exact verification and manual rollback render
+
+Run these checks before cancelling the timer:
+
+```bash
+nmcli device status
+bridge link show dev enp7s0
+ip -brief address show dev br-lab10
+ip -4 route show 192.168.100.0/24 dev br-lab10
+ip -4 route show default
+resolvectl status
+nmcli -g GENERAL.CONNECTION,GENERAL.MTU device show eno1
+nmcli -g GENERAL.CONNECTION,GENERAL.MTU device show eno1.80
+```
+
+The host address captured from `$PARENT` must appear only on `br-lab10`;
+the Lab-10 connected route must use `br-lab10`; the pre-existing default
+route must remain on its independent Lab 2.5GbE path; and `eno1` and
+`eno1.80` must match their invariant fingerprints. The resolver must retain
+its existing internal DNS server set and `arpa` search domain.
+
+The mandatory active checks for a Lab-10 gateway, internal DNS query, approved
+cluster host, and Internet target cannot yet be rendered without inventing
+operator-owned targets. Their absence is an execution stop condition. If
+manual rollback is required before the timer fires, run the timer's rollback
+script unchanged:
+
+```bash
+sudo /run/mail-core-br-lab10/rollback
+```
+
+### Disposition
+
+**Execution is not recommended now.** The host profile and independent
+management fallback are suitable for a guarded bridge transition, and a local
+timed rollback is available. However, an approved Lab-10 gateway, internal DNS
+query target, cluster-reachability target, and Internet probe target are still
+unresolved. Supply those four verification targets in a separate operator
+decision, then re-run the stale-state gates and request final activation
+authorization. No VM 9000 work is authorized.
