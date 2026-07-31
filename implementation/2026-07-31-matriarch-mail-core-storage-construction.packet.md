@@ -101,6 +101,12 @@ sudo -n parted -s /dev/nvme1n1 unit s print
 sudo -n lsblk --bytes --output NAME,PATH,TYPE,SIZE,START,FSTYPE,LABEL,MOUNTPOINTS /dev/nvme1n1
 
 # write: create the filesystem only after p5's exact boundaries are verified
+# A GPT PARTUUID is expected on a newly created partition; reject only an
+# existing filesystem TYPE or filesystem label.
+existing_type=$(sudo -n blkid -s TYPE -o value /dev/nvme1n1p5 2>/dev/null || true)
+existing_label=$(sudo -n blkid -s LABEL -o value /dev/nvme1n1p5 2>/dev/null || true)
+test -z "$existing_type"
+test -z "$existing_label"
 sudo -n mkfs.xfs -L mail-core-vmstore /dev/nvme1n1p5
 new_uuid=$(sudo -n blkid -s UUID -o value /dev/nvme1n1p5)
 test -n "$new_uuid"
@@ -146,9 +152,10 @@ After final operator approval of the preflight render:
    start `3175464960s`, end `3712335871s`, and exactly 256 GiB. Stop before
    formatting if the kernel cannot reread the table safely; do not reboot.
 2. Run `mkfs.xfs -L mail-core-vmstore /dev/nvme1n1p5` exactly once. Before the
-   command, re-check that `p5` has no filesystem signature and is the new
-   partition on the approved disk. Do not force or overwrite an existing
-   signature.
+   command, re-check that `p5` has no filesystem `TYPE` or label and is the
+   new partition on the approved disk. Its GPT `PARTUUID` is expected and is
+   not a filesystem signature. Do not force or overwrite an existing
+   filesystem.
 3. Create `/var/lib/libvirt/mail-core` only as `root:root`, mode `0755`.
    Add Fedora's standard `virt_image_t` file-context mapping only for that
    path, apply it with `restorecon`, and verify it on the mountpoint and both
