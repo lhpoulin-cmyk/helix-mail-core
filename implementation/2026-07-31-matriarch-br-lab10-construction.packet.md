@@ -142,6 +142,9 @@ bridge, VLAN, libvirt, storage, or VM state was changed.
 | Existing unrelated bridge | `podman0` only; it has a Podman veth port and is not part of this operation |
 | Current management | The observed established SSH management session terminates on Lab 2.5GbE, not Lab 10GbE. A logged-in local `seat0` / `tty2` session is also present. Both are independent of `enp7s0`. |
 | Checkpoint capability | NetworkManager 1.56.1 does not expose an `nmcli` checkpoint command. `/usr/bin/systemd-run` is present (systemd 259) and can arm a local timed rollback independent of network reachability. |
+| Separate default path | IPv4 default route is static on `eno1`, metric 100; fingerprint `2777bf8bfd1476209ae8`. It is not a Lab-10 route and must remain unchanged. |
+| Resolver verification target | Two current resolver addresses are configured on `eno1`; set fingerprint `e1f289695a33f4307409`. `ws-matriarch.arpa` resolves through that configured resolver path; name fingerprint `82b6505c6e6360db`. |
+| Lab-10 peer verification target | No target established. The one current `enp7s0` neighbor in `REACHABLE` state did not answer a one-second interface-bound ICMP probe. |
 
 Credential-bearing NetworkManager settings were intentionally not read. The
 active profile is wired Ethernet and the captured non-secret settings contain
@@ -269,10 +272,22 @@ nmcli device status
 bridge link show dev enp7s0
 ip -brief address show dev br-lab10
 ip -4 route show 192.168.100.0/24 dev br-lab10
-ip -4 route show default
-resolvectl status
+test "$(ip -4 route show default | sha256sum | cut -c1-20)" = 2777bf8bfd1476209ae8
+ip -4 route show default | grep -F ' dev eno1 '
+test "$(resolvectl dns eno1 | grep -oE '([0-9]{1,3}\\.){3}[0-9]{1,3}' | sort -u | sha256sum | cut -c1-20)" = e1f289695a33f4307409
+resolvectl query --interface=eno1 ws-matriarch.arpa
 nmcli -g GENERAL.CONNECTION,GENERAL.MTU device show eno1
 nmcli -g GENERAL.CONNECTION,GENERAL.MTU device show eno1.80
+```
+
+Run the default-route and resolver checks once before arming the timer and once
+after the bridge transition. They verify the independent `eno1` collateral
+path: they must not be interpreted as proof that `br-lab10` carries Lab-10
+traffic. A non-gating Internet collateral check, when executed, is explicitly
+bound to `eno1`:
+
+```bash
+ping -n -c 1 -W 2 -I eno1 1.1.1.1
 ```
 
 The host address captured from `$PARENT` must appear only on `br-lab10`;
@@ -281,11 +296,24 @@ route must remain on its independent Lab 2.5GbE path; and `eno1` and
 `eno1.80` must match their invariant fingerprints. The resolver must retain
 its existing internal DNS server set and `arpa` search domain.
 
-The mandatory active checks for a Lab-10 gateway, internal DNS query, approved
-cluster host, and Internet target cannot yet be rendered without inventing
-operator-owned targets. Their absence is an execution stop condition. If
-manual rollback is required before the timer fires, run the timer's rollback
-script unchanged:
+Before final execution authorization, nominate one currently reachable Lab-10
+peer only. Immediately before the transition, the executor must prove its
+route and reachability, then repeat the same proof against the bridge:
+
+```bash
+LAB10_PEER='OPERATOR-NOMINATED-REACHABLE-LAB10-PEER'
+ip route get "$LAB10_PEER" | grep -F ' dev enp7s0 '
+ping -n -c 1 -W 1 -I enp7s0 "$LAB10_PEER"
+# After the bridge transition:
+ip route get "$LAB10_PEER" | grep -F ' dev br-lab10 '
+ping -n -c 1 -W 1 -I br-lab10 "$LAB10_PEER"
+```
+
+No Lab-10 gateway is requested or permitted: this attachment has no gateway
+and no default route by design. The internal DNS name and resolver target are
+now evidence-derived. The missing Lab-10 peer is the sole remaining
+verification-target stop condition. If manual rollback is required before the
+timer fires, run the timer's rollback script unchanged:
 
 ```bash
 sudo /run/mail-core-br-lab10/rollback
@@ -294,9 +322,9 @@ sudo /run/mail-core-br-lab10/rollback
 ### Disposition
 
 **Execution is not recommended now.** The host profile and independent
-management fallback are suitable for a guarded bridge transition, and a local
-timed rollback is available. However, an approved Lab-10 gateway, internal DNS
-query target, cluster-reachability target, and Internet probe target are still
-unresolved. Supply those four verification targets in a separate operator
-decision, then re-run the stale-state gates and request final activation
-authorization. No VM 9000 work is authorized.
+management fallback are suitable for a guarded bridge transition; a local
+timed rollback is available; the default `eno1` route and resolver checks are
+evidence-derived; and no Lab-10 gateway is needed. One currently reachable
+Lab-10 peer remains unestablished by evidence. Supply only that peer, then
+re-run the stale-state gates and request final activation authorization. No VM
+9000 work is authorized.
