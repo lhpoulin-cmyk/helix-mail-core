@@ -23,7 +23,7 @@ case ${FAKE_CODEX_MODE-success} in missing) exit 0;; nonzero) exit 37;; evidence
 printf '%s\n' 'fake result' >"$HELIX_RUN_DIR/worker-result.md"
 EOF
 chmod +x "$fakebin/codex"
-git -C "$repo" add scripts/collect-matriarch-readonly
+git -C "$repo" add scripts/collect-matriarch-readonly scripts/run-worker-headless scripts/supervise-worker-headless scripts/wait-worker-result
 git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit --amend -q --no-edit
 make_run() { run=$1; profile=${2-}; mkdir "$run"; git -C "$repo" rev-parse HEAD >"$run/start-commit"; : >"$run/prompt.txt"; [ -z "$profile" ] || printf '%s\n' "$profile" >"$run/host-evidence-profile"; }
 run_supervisor() { (cd "$repo" && PATH="$fakebin:$PATH" FAKE_LOG="$scratch/calls.log" HELIX_RUN_DIR="$1" "$repo/scripts/supervise-worker-headless"); }

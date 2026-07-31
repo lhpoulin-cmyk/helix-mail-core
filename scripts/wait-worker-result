@@ -16,8 +16,37 @@ grep -Eq '^[0-9]+$' "$run/exit-status" || { echo 'error: invalid worker exit sta
 [ "$(cat "$run/failure-stage")" = none ] || { echo 'error: successful worker has failure metadata' >&2; exit 1; }
 [ "$(cat "$run/codex-exit-status")" = 0 ] || { echo 'error: successful worker has invalid Codex status' >&2; exit 1; }
 [ -f "$run/worker-result.md" ] || { echo 'error: successful worker has no result' >&2; exit 1; }
-reported=$(sed -n 's/^[- ][- ]*Starting commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]`')
-end=$(sed -n 's/^[- ][- ]*Ending commit:[[:space:]]*//p' "$run/worker-result.md" | head -1 | tr -d '[:space:]`')
+parse_result_commit() {
+  label=$1
+  value=$(awk -v label="$label" '
+    {
+      prefix = "^[ \\t]*(-[ \\t]+)?" label ":"
+      if ($0 ~ prefix) {
+        candidate = $0
+        sub(prefix, "", candidate)
+        if (candidate ~ /^[ \\t]*[0-9a-f]+$/) {
+          sub(/^[ \\t]*/, "", candidate)
+          if (length(candidate) == 40) {
+            count++
+            commit = candidate
+            next
+          }
+        }
+        invalid = 1
+      }
+    }
+    END {
+      if (invalid || count != 1) exit 1
+      print commit
+    }
+  ' "$run/worker-result.md") || {
+    echo "error: result must contain exactly one full lowercase $label line" >&2
+    exit 1
+  }
+  printf '%s\n' "$value"
+}
+reported=$(parse_result_commit 'Starting commit')
+end=$(parse_result_commit 'Ending commit')
 [ "$reported" = "$start" ] || { echo 'error: result starting commit mismatch' >&2; exit 1; }
 git rev-parse --verify --quiet "$end^{commit}" >/dev/null || { echo 'error: invalid ending commit' >&2; exit 1; }
 git merge-base --is-ancestor "$start" "$end" || { echo 'error: ending commit does not descend from start' >&2; exit 1; }
