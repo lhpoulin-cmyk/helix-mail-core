@@ -31,7 +31,7 @@ profile_declarations=$(grep -c '^HOST_EVIDENCE_PROFILE=' "$packet" || true)
 case "$profile_declarations" in
   0) profile=none ;;
   1) profile=$(sed -n 's/^HOST_EVIDENCE_PROFILE=//p' "$packet")
-     case "$profile" in matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1) ;; *) echo 'error: unsupported HOST_EVIDENCE_PROFILE declaration' >&2; exit 2;; esac;;
+     case "$profile" in matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1|matriarch-network-readonly-v1) ;; *) echo 'error: unsupported HOST_EVIDENCE_PROFILE declaration' >&2; exit 2;; esac;;
   *) echo 'error: packet has multiple HOST_EVIDENCE_PROFILE declarations' >&2; exit 2;;
 esac
 

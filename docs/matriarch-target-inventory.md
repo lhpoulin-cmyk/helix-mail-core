@@ -242,9 +242,11 @@ Construction-only inventory values are now fixed as:
 
 ```text
 VM_STORAGE=mail-core-construction
-SYSTEM_DISK_REFERENCE=mail-core-construction/mail-core-9000-system.qcow2
+SYSTEM_DISK_REFERENCE=mail-core-9000-system.qcow2
 MAIL_DATA_STORAGE=mail-core-construction
-MAIL_DATA_DISK_REFERENCE=mail-core-construction/mail-core-9000-data.qcow2
+MAIL_DATA_DISK_REFERENCE=mail-core-9000-data.qcow2
+MOUNTPOINT=/var/lib/libvirt/mail-core
+XFS_LABEL=mailcore-vm
 ```
 
 These do not populate the production Proxmox value file or authorize VM

@@ -21,7 +21,7 @@ fi
 
 profile=${HOST_EVIDENCE_PROFILE-}
 case "$profile" in
-  matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1) ;;
+  matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1|matriarch-network-readonly-v1) ;;
   *) echo 'error: unsupported host evidence profile' >&2; exit 2;;
 esac
 [ "$#" -eq 1 ] || { echo "usage: $0 RUN_EVIDENCE_DIRECTORY" >&2; exit 2; }
@@ -47,7 +47,7 @@ export LC_ALL
 
 candidate() {
   case "$1" in
-    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl|cat|uname|date|test|lsblk|df|blkid|pvs|vgs|lvs|btrfs|zpool|zfs) ;;
+    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl|cat|uname|date|test|lsblk|df|blkid|pvs|vgs|lvs|btrfs|zpool|zfs|firewall-cmd) ;;
     *) return 1;;
   esac
   # Candidate order is repository-controlled; inherited PATH is never searched.
@@ -153,7 +153,7 @@ record resolver-status 'resolvectl status' resolvectl status
 record mount-state 'findmnt --kernel --output TARGET,SOURCE,FSTYPE,OPTIONS' findmnt --kernel --output TARGET,SOURCE,FSTYPE,OPTIONS
 record libvirtd-status 'systemctl is-active libvirtd' systemctl is-active libvirtd
 record virtqemud-status 'systemctl is-active virtqemud' systemctl is-active virtqemud
-else
+elif [ "$profile" = matriarch-storage-readonly-v1 ]; then
 # Fixed unprivileged block-storage metadata only. Packet data cannot add a
 # device, path, or command to this allowlist.
 record lsblk 'lsblk --json --bytes --output NAME,KNAME,PATH,TYPE,SIZE,FSTYPE,FSVER,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SERIAL,WWN,TRAN,ROTA,PKNAME' lsblk --json --bytes --output NAME,KNAME,PATH,TYPE,SIZE,FSTYPE,FSVER,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SERIAL,WWN,TRAN,ROTA,PKNAME
@@ -167,6 +167,21 @@ record btrfs 'btrfs filesystem show' btrfs filesystem show
 record zpool 'zpool status' zpool status
 record zfs 'zfs list' zfs list
 record mdstat 'cat /proc/mdstat' cat /proc/mdstat
+else
+# Fixed network and libvirt metadata. No interface, connection, or zone is
+# supplied by a packet or caller.
+record hostnamectl 'hostnamectl' hostnamectl
+record fedora-release 'cat /etc/fedora-release' cat /etc/fedora-release
+record ip-link 'ip -details link show' ip -details link show
+record ip-address 'ip -brief address' ip -brief address
+record ip-route 'ip route' ip route
+record bridge-link 'bridge link' bridge link
+record nm-general 'nmcli general status' nmcli general status
+record nm-devices 'nmcli device status' nmcli device status
+record nm-active 'nmcli connection show --active' nmcli connection show --active
+record firewall-zones 'firewall-cmd --get-active-zones' firewall-cmd --get-active-zones
+record system-version 'virsh --readonly --connect qemu:///system version' virsh --readonly --connect qemu:///system version
+record system-networks 'virsh --readonly --connect qemu:///system net-list --all' virsh --readonly --connect qemu:///system net-list --all
 fi
 
 (

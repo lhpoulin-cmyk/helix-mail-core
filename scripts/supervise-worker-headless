@@ -67,7 +67,7 @@ start=$(/bin/cat "$run/start-commit" 2>/dev/null) || fail preflight 2
 [ "$(git rev-parse HEAD)" = "$start" ] || fail preflight 2
 [ -z "$(git status --porcelain --untracked-files=all)" ] || fail preflight 2
 profile=$(/bin/cat "$run/host-evidence-profile" 2>/dev/null || true)
-case "$profile" in ''|matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1) ;; *) fail preflight 2;; esac
+case "$profile" in ''|matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1|matriarch-network-readonly-v1) ;; *) fail preflight 2;; esac
 evidence=$run/host-evidence
 
 if [ -n "$profile" ]; then
