@@ -39,3 +39,12 @@ Present exactly one Decision 3 choice: accept the recommended attachment or
 keep it unresolved. Include observed state, later exact live changes,
 disruption risk, rollback path, and inferior alternatives. Stop after that
 decision; do not proceed to guest-address, gateway, resolver, or VM work.
+
+### Operator Decision 3 — accepted construction parent
+
+`NETWORK_ATTACHMENT=br-lab10` is approved for construction only. Its parent
+is existing `enp7s0` (`Lab 10GbE`). `eno1`, `eno1.80`, `podman0`,
+libvirt NAT, and macvtap are not approved for mail-core. VLAN 80 and its
+administrative connection remain untouched. A separate bounded NetworkManager
+bridge packet must capture and render the existing parent configuration and
+rollback plan before any activation.
