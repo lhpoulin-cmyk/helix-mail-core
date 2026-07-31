@@ -2,8 +2,8 @@
 inventory/production/values.env
 inventory/production/*.secret
 evidence/private/
-handoff/dispatch-state.env
-handoff/worker-result.md
+handoff/active-run
+handoff/runs/
 *.key
 *.pem
 *.p12

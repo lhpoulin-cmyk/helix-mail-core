@@ -1,33 +1,22 @@
 # Foreman / worker loop
 
-The foreman and worker never edit concurrently. The foreman reviews a committed packet, dispatches it, and waits. The worker makes only packet-authorized changes, commits, writes a factual ignored result, and stops. The foreman reviews only that committed result.
+Each packet gets a fresh, disposable headless Codex worker. Tmux is only the
+process supervisor and observation surface; no interactive TUI or keystroke
+injection is used. The foreman dispatches only from a clean worktree, then
+waits and reviews only committed results.
 
-`scripts/dispatch-worker` accepts exactly one packet path (or `--dry-run` plus one path). It refuses a dirty worktree, absent packet, missing worker pane, or a pane that does not appear to be running Codex. It uses a temporary tmux buffer and sends only the fixed worker instruction plus the packet path; it never sends approvals, confirmations, secrets, passwords, or permission grants.
+`scripts/dispatch-worker [--dry-run] implementation/<packet>.packet.md` creates
+an ignored `handoff/runs/<RUN_ID>/` with the packet path, start commit, prompt,
+log, worker result, exit status, and timestamps. A real dispatch starts
+`mail-worker-<RUN_ID>`. Inspect it with `tmux attach -t mail-worker-<RUN_ID>`;
+detaching does not terminate the worker.
 
-The worker result is ignored and must use this minimum form:
+The worker is run as `codex exec --sandbox workspace-write --ephemeral`; no
+dangerous bypass flags or network-enabling settings are used. Human approval
+boundaries remain unchanged. The packet remains task authority.
 
-```text
-Starting commit: <full commit hash reported by dispatch>
-Ending commit: <full committed hash>
-Packet: implementation/<packet>.packet.md
-Validation: <commands and factual outcomes>
-Changed files: <factual list>
-Live mutation: none | <explicitly authorized action>
-```
-
-`handoff/dispatch-state.env` and `handoff/worker-result.md` are the only ignored handoff state. They must never contain secrets or private raw evidence.
-
-After operator review, first prove the action without sending it:
-
-```sh
-scripts/dispatch-worker --dry-run implementation/<approved-packet>.packet.md
-```
-
-With a clean worktree and an approved packet, dispatch and wait:
-
-```sh
-scripts/dispatch-worker implementation/<approved-packet>.packet.md
-scripts/wait-worker-result --timeout 1800
-```
-
-The waiter requires a result newer than the dispatch state, a matching starting commit, and an ending commit that exists locally. Timeout is a clean failure; it never sends input to the worker.
+After dispatch, use `scripts/wait-worker-result --timeout 1800 <RUN_ID>`. It
+only verifies handoff integrity; it never accepts work. A stale active marker
+must be removed manually only after confirming its tmux session no longer
+exists and that no worker process remains. Do not kill an apparently active
+worker automatically.

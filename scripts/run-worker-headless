@@ -1,0 +1,18 @@
+#!/bin/sh
+set -u
+run=${1:-${HELIX_RUN_DIR:-}}
+[ -n "$run" ] && [ -d "$run" ] || { echo 'error: invalid run directory' >&2; exit 2; }
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 2
+root=$(CDPATH= cd -- "$root" && pwd -P)
+start=$(cat "$run/start-commit")
+[ "$(git rev-parse HEAD)" = "$start" ] || { echo 'error: starting commit mismatch' >&2; exit 2; }
+[ -z "$(git status --porcelain --untracked-files=all)" ] || { echo 'error: dirty starting worktree' >&2; exit 2; }
+status=0
+codex exec --sandbox workspace-write --cd "$root" --ephemeral --color never -o "$run/codex-last-message.txt" - <"$run/prompt.txt" >"$run/worker.log" 2>&1 || status=$?
+printf '%s\n' "$status" >"$run/.exit-status.tmp"
+mv "$run/.exit-status.tmp" "$run/exit-status"
+date -u +%Y-%m-%dT%H:%M:%SZ >"$run/.finished-at.tmp"
+mv "$run/.finished-at.tmp" "$run/finished-at"
+active=$root/handoff/active-run
+if [ -f "$active" ] && grep -q "^$(basename "$run") " "$active"; then rm -f "$active"; fi
+exit "$status"

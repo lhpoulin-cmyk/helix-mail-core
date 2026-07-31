@@ -1,79 +1,48 @@
 #!/bin/sh
-# Dispatch exactly one reviewed implementation packet to the dedicated worker.
 set -eu
-
-usage() { echo "usage: $0 [--dry-run] implementation/<packet>.packet.md" >&2; exit 2; }
-dry_run=false
-case "$#" in
-  1) packet_input=$1 ;;
-  2) [ "$1" = "--dry-run" ] || usage; dry_run=true; packet_input=$2 ;;
-  *) usage ;;
-esac
-root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: run from inside a Git worktree" >&2; exit 2; }
+usage(){ echo "usage: $0 [--dry-run] implementation/<packet>.packet.md" >&2; exit 2; }
+dry=false
+case "$#" in 1) input=$1;; 2) [ "$1" = --dry-run ] || usage; dry=true; input=$2;; *) usage;; esac
+root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo 'error: not a Git worktree' >&2; exit 2; }
 root=$(CDPATH= cd -- "$root" && pwd -P)
-case "$packet_input" in /*) packet_candidate=$packet_input ;; *) packet_candidate=$root/$packet_input ;; esac
-[ -f "$packet_candidate" ] || { echo "error: packet does not exist: $packet_input" >&2; exit 2; }
-packet=$(CDPATH= cd -- "$(dirname -- "$packet_candidate")" && pwd -P)/$(basename -- "$packet_candidate")
-case "$packet" in "$root"/implementation/*) ;; *) echo "error: packet must be inside $root/implementation" >&2; exit 2 ;; esac
-case "$packet" in *'
-'*) echo "error: packet path must not contain a newline" >&2; exit 2 ;; esac
-packet_relative=${packet#"$root"/}
-
-# Any tracked or non-ignored untracked change blocks dispatch and prevents
-# concurrent edits. Only the two explicit ignored handoff files are allowed.
+case "$input" in /*) candidate=$input;; *) candidate=$root/$input;; esac
+[ -f "$candidate" ] && [ ! -L "$candidate" ] || { echo "error: packet missing or symlinked: $input" >&2; exit 2; }
+packet=$(readlink -f -- "$candidate")
+case "$packet" in "$root"/implementation/*) ;; *) echo 'error: packet escapes implementation directory' >&2; exit 2;; esac
+rel=${packet#"$root"/}
 dirty=$(git status --porcelain --untracked-files=all)
-[ -z "$dirty" ] || { echo "error: worktree is not clean; commit, remove, or explicitly ignore handoff-only files first" >&2; printf '%s\n' "$dirty" >&2; exit 1; }
+[ -z "$dirty" ] || { echo 'error: dirty worktree' >&2; printf '%s\n' "$dirty" >&2; exit 1; }
 ignored=$(git status --porcelain --ignored=matching --untracked-files=all | sed -n 's/^!! //p')
-if [ -n "$ignored" ]; then
-  while IFS= read -r ignored_path; do
-    case "$ignored_path" in
-      handoff/dispatch-state.env|handoff/worker-result.md) ;;
-      *) echo "error: ignored non-handoff path blocks dispatch: $ignored_path" >&2; exit 1 ;;
-    esac
-  done <<EOF
+if [ -n "$ignored" ]; then while IFS= read -r p; do case "$p" in handoff/active-run|handoff/runs/) ;; *) echo "error: ignored non-runtime path: $p" >&2; exit 1;; esac; done <<EOF
 $ignored
 EOF
 fi
-# This is deliberately not configurable: dispatch is limited to the dedicated
-# worker pane, never an arbitrary operator-selected tmux target.
-target=mail-worker:0.0
-tmux_bin=${TMUX_BIN:-tmux}
-"$tmux_bin" list-panes -t "$target" -F '#{pane_id}' >/dev/null 2>&1 || { echo "error: tmux target does not exist: $target" >&2; exit 1; }
-pane_command=$("$tmux_bin" display-message -p -t "$target" '#{pane_current_command}' 2>/dev/null || true)
-pane_text=$("$tmux_bin" capture-pane -p -t "$target" -S -40 2>/dev/null || true)
-case "$pane_command" in
-  *codex*|*Codex*) worker_is_codex=true ;;
-  *) if printf '%s\n' "$pane_text" | grep -qi 'codex'; then worker_is_codex=true; else worker_is_codex=false; fi ;;
-esac
-[ "$worker_is_codex" = true ] || { echo "error: tmux target does not appear to be running Codex: $target" >&2; exit 1; }
-start_commit=$(git rev-parse --verify HEAD)
-dispatch_epoch=$(date -u +%s)
-dispatch_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-instruction="Read AGENTS.md first. Execute only the packet at $packet_relative. Do not expand scope. Run required validation, commit the completed work, write the factual result to handoff/worker-result.md, and stop. Do not create the next packet or approve your own work."
-printf 'packet: %s\n' "$packet_relative"
-printf 'tmux target: %s\n' "$target"
-printf 'starting commit: %s\n' "$start_commit"
-printf 'dispatch timestamp: %s\n' "$dispatch_timestamp"
-if [ "$dry_run" = true ]; then printf 'dry run: would paste one instruction through a temporary tmux buffer and send Enter\n'; exit 0; fi
+active=$root/handoff/active-run
+[ ! -e "$active" ] || { echo "error: active run: $(cat "$active")" >&2; exit 1; }
+start=$(git rev-parse HEAD); run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)-$$"; run=$root/handoff/runs/$run_id; session="mail-worker-$run_id"
+printf 'run ID: %s\ntmux session: %s\npacket: %s\nstarting commit: %s\nlog path: %s/worker.log\n' "$run_id" "$session" "$rel" "$start" "$run"
+[ "$dry" = false ] || { echo 'dry run: would launch detached headless codex exec'; exit 0; }
+umask 077; mkdir -p "$root/handoff/runs"; mkdir "$run" || exit 1
+printf '%s\n' "$rel" >"$run/packet-path"; printf '%s\n' "$start" >"$run/start-commit"; date -u +%Y-%m-%dT%H:%M:%SZ >"$run/started-at"
+cat >"$run/prompt.txt" <<EOF
+You are the implementation worker for helix-mail-core.
 
-umask 077
-handoff_dir=$root/handoff
-mkdir -p "$handoff_dir"
-state_tmp=$(mktemp "$handoff_dir/.dispatch-state.XXXXXX")
-buffer_tmp=$(mktemp "${TMPDIR:-/tmp}/helix-worker-dispatch.XXXXXX")
-buffer_name="helix-worker-dispatch-$$"
-cleanup() { rm -f "$state_tmp" "$buffer_tmp"; "$tmux_bin" delete-buffer -b "$buffer_name" >/dev/null 2>&1 || true; }
-trap cleanup EXIT HUP INT TERM
-{
-  printf 'PACKET_PATH=%s\n' "$packet_relative"
-  printf 'START_COMMIT=%s\n' "$start_commit"
-  printf 'DISPATCH_EPOCH=%s\n' "$dispatch_epoch"
-  printf 'DISPATCH_TIMESTAMP=%s\n' "$dispatch_timestamp"
-  printf 'TMUX_TARGET=%s\n' "$target"
-} >"$state_tmp"
-mv "$state_tmp" "$handoff_dir/dispatch-state.env"
-printf '%s\n' "$instruction" >"$buffer_tmp"
-"$tmux_bin" load-buffer -b "$buffer_name" "$buffer_tmp"
-"$tmux_bin" paste-buffer -b "$buffer_name" -d -t "$target"
-"$tmux_bin" send-keys -t "$target" Enter
-printf 'dispatched: %s\n' "$packet_relative"
+Read AGENTS.md first.
+
+Execute only the packet at:
+
+    $rel
+
+Starting commit:
+
+    $start
+
+Do not expand scope. The packet is the sole task authority. This packet permits read-only Fedora/KVM/libvirt inspection and repository modifications needed to record and render the inventory. It does not permit creation or mutation of a VM, libvirt domain, storage pool, network, NetworkManager configuration, DNS record, certificate, credential, package, service, or Fastmail configuration.
+
+Run all required validation. Commit completed repository changes as one bounded implementation commit. Write the factual result to $run/worker-result.md including packet path, starting commit, ending commit, files changed, tests run, tests passed and failed, unresolved values, live-state observations and evidence timestamps, live mutation status, and exact stop reason if blocked.
+
+Do not create the next packet. Do not approve your own work. Do not modify foreman doctrine. Stop after writing the result and exit.
+EOF
+printf '%s %s\n' "$run_id" "$session" >"$active.tmp"; mv "$active.tmp" "$active"
+if ! tmux new-session -d -s "$session" -c "$root" env HELIX_RUN_DIR="$run" "$root/scripts/run-worker-headless"; then rm -f "$active"; echo 'error: tmux launch failed' >&2; exit 1; fi
+printf 'dispatched: %s\n' "$run_id"
