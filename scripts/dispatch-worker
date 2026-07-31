@@ -51,6 +51,21 @@ Run all required validation. Commit completed repository changes as one bounded 
 
 Do not create the next packet. Do not approve your own work. Do not modify foreman doctrine. Stop after writing the result and exit.
 EOF
+if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then cat >>"$run/prompt.txt" <<EOF
+
+This is a profiled evidence run. The authoritative, supervisor-verified host
+evidence is only at:
+
+    $run/host-evidence/
+    $run/host-evidence/manifest.sha256
+
+Do not run host-inspection commands or inspect host state by any other means.
+Do not modify evidence, retry or supplement collection, infer historical state,
+or resolve inconclusive evidence. Every host-related conclusion must cite the
+specific evidence item(s) supporting it. Evidence is authoritative only for
+this run and does not authorize live changes.
+EOF
+fi
 printf '%s %s\n' "$run_id" "$session" >"$active.tmp"; mv "$active.tmp" "$active"
 if ! tmux new-session -d -s "$session" -c "$root" env HELIX_RUN_DIR="$run" "$root/scripts/supervise-worker-headless"; then rm -f "$active"; echo 'error: tmux launch failed' >&2; exit 1; fi
 printf 'dispatched: %s\n' "$run_id"

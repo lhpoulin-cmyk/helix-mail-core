@@ -4,6 +4,21 @@
 # are the complete allowlist.
 set -u
 
+# Command lookup is deliberately independent of the caller's environment.
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+test_root=
+if [ "${1-}" = --test-command-root ]; then
+  [ "$#" -eq 3 ] || { echo 'usage: --test-command-root /absolute/path RUN_EVIDENCE_DIRECTORY' >&2; exit 2; }
+  test_root=$2
+  case "$test_root" in /*) ;; *) echo 'error: test command root must be absolute' >&2; exit 2;; esac
+  case "/$test_root/" in *'/../'*) echo 'error: test command root must not traverse' >&2; exit 2;; esac
+  [ -d "$test_root" ] && [ ! -L "$test_root" ] || { echo 'error: test command root is missing or symlinked' >&2; exit 2; }
+  resolved_test_root=$(readlink -f -- "$test_root") || exit 2
+  [ "$resolved_test_root" = "$test_root" ] || { echo 'error: test command root is not canonical' >&2; exit 2; }
+  shift 2
+fi
+
 profile=${HOST_EVIDENCE_PROFILE-}
 [ "$profile" = "matriarch-libvirt-readonly-v1" ] || {
   echo 'error: unsupported host evidence profile' >&2
@@ -30,6 +45,16 @@ umask 077
 LC_ALL=C
 export LC_ALL
 
+candidate() {
+  case "$1" in
+    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl) path=/usr/bin/$1;;
+    cat|uname|date|test) path=/usr/bin/$1;;
+    *) return 1;;
+  esac
+  [ -z "$test_root" ] || path=$test_root$path
+  [ -x "$path" ] && printf '%s\n' "$path"
+}
+
 sanitize() {
   # Stable identifiers are not needed to establish the proposed construction
   # state. Keep query results useful while removing common MAC/UUID/serial forms.
@@ -42,15 +67,16 @@ sanitize() {
 record() {
   identifier=$1
   representation=$2
-  shift 2
+  command_name=$3
+  shift 3
   sequence=$((sequence + 1))
   file=$(printf '%s/evidence-%02d-%s.txt' "$destination" "$sequence" "$identifier")
   stdout_tmp=$destination/.stdout-$sequence
   stderr_tmp=$destination/.stderr-$sequence
-  started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  timeout 15s "$@" >"$stdout_tmp" 2>"$stderr_tmp"
-  status=$?
-  finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  started=$(/usr/bin/date -u +%Y-%m-%dT%H:%M:%SZ)
+  command_path=$(candidate "$command_name" || true)
+  if [ -n "$command_path" ]; then /usr/bin/timeout 15s "$command_path" "$@" >"$stdout_tmp" 2>"$stderr_tmp"; status=$?; else : >"$stdout_tmp"; printf 'fixed candidate unavailable: %s\n' "$command_name" >"$stderr_tmp"; status=127; fi
+  finished=$(/usr/bin/date -u +%Y-%m-%dT%H:%M:%SZ)
   case "$status" in
     0) outcome=observed;;
     124) outcome=timed-out;;
@@ -64,6 +90,7 @@ record() {
     printf 'finished_at_utc: %s\n' "$finished"
     printf 'exit_status: %s\n' "$status"
     printf 'outcome: %s\n' "$outcome"
+    [ -z "$test_root" ] || printf '%s\n' 'evidence_mode: test-only'
     printf '%s\n' '--- stdout ---'
     sanitize <"$stdout_tmp"
     printf '%s\n' '--- stderr ---'

@@ -31,6 +31,20 @@ handoff if evidence is missing, changed, symlinked, or added. Evidence is
 authoritative for that run; the worker must not repeat host inspection. Raw
 evidence is ignored and remains local.
 
+For profiled runs, the generated prompt names the run-local evidence directory
+and manifest, treats them as supervisor-verified and authoritative, forbids
+host inspection, evidence modification, retry or supplementation, historical
+inference, and resolution of inconclusive evidence, and requires each
+host-related conclusion to cite its evidence items. Unprofiled prompts make no
+such evidence claims.
+
+The collector resets PATH before command handling and resolves its fixed
+observations from repository-controlled absolute candidates. Its sole fake-test
+interface is `--test-command-root /absolute/path`; that non-symlinked,
+canonical root maps the same identifiers and marks output test-only. Dispatch,
+packets, prompts, and environment cannot select it, and its output is never
+valid host evidence.
+
 The worker is run as `codex exec --sandbox workspace-write --ephemeral`; no
 dangerous bypass flags or network-enabling settings are used. Human approval
 boundaries remain unchanged. The packet remains task authority.

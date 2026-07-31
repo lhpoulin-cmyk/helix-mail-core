@@ -18,5 +18,8 @@ rg -q 'does not permit creation or mutation' "$root/scripts/dispatch-worker"
 rg -q 'HOST_EVIDENCE_PROFILE' "$root/scripts/dispatch-worker"
 rg -q 'verify_evidence' "$root/scripts/supervise-worker-headless"
 rg -q 'manifest.sha256' "$root/scripts/collect-matriarch-readonly"
+rg -q -- '--test-command-root' "$root/scripts/collect-matriarch-readonly"
+rg -q 'Do not run host-inspection commands' "$root/scripts/dispatch-worker"
+rg -q 'evidence is only at' "$root/scripts/dispatch-worker"
 "$root/tests/test-headless-finalization.sh"
 echo 'PASS headless worker static assertions'
