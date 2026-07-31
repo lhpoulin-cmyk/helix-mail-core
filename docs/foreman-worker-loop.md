@@ -39,7 +39,16 @@ host-related conclusion to cite its evidence items. Unprofiled prompts make no
 such evidence claims.
 
 The collector resets PATH before command handling and resolves its fixed
-observations from repository-controlled absolute candidates. Its sole fake-test
+observations from repository-controlled absolute candidates. It records timed
+`dominfo mail-core-9000` queries separately for `qemu:///system` and
+`qemu:///session`, both through `virsh --readonly`. A dominfo result is
+classified as observed, absent, unavailable, connection-denied,
+permission-denied, timed-out, or failure. `absent` applies only to the queried
+name in that URI scope; it never makes a claim about numeric runtime IDs.
+
+Before any evidence file or manifest is written, the collector replaces every
+32-hex `Machine ID` value with `Machine ID: [REDACTED]`. Hostname, Fedora,
+kernel, architecture, and KVM facts remain available. Its sole fake-test
 interface is `--test-command-root /absolute/path`; that non-symlinked,
 canonical root maps the same identifiers and marks output test-only. Dispatch,
 packets, prompts, and environment cannot select it, and its output is never

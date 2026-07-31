@@ -62,7 +62,10 @@ candidate() {
 sanitize() {
   # Stable identifiers are not needed to establish the proposed construction
   # state. Keep query results useful while removing common MAC/UUID/serial forms.
+  # hostnamectl Machine IDs are specifically removed before any evidence file
+  # (and therefore before its manifest) is created.
   sed -E \
+    -e 's/[Mm]achine[[:space:]]+[Ii][Dd][[:space:]]*[:=][[:space:]]*[[:xdigit:]]{32}/Machine ID: [REDACTED]/g' \
     -e 's/([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}/[MAC-REDACTED]/g' \
     -e 's/[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}/[UUID-REDACTED]/gi' \
     -e 's/([Ss]erial|[Uu]nique ID)[[:space:]]*[:=][[:space:]]*[^[:space:]]+/\1: [IDENTIFIER-REDACTED]/g'
@@ -85,7 +88,23 @@ record() {
     0) outcome=observed;;
     124) outcome=timed-out;;
     126|127) outcome=unavailable;;
-    *) if rg -qi 'permission denied|operation not permitted|access denied|authorization failed' "$stderr_tmp" "$stdout_tmp"; then outcome=permission-denied; else outcome=failed; fi;;
+    *)
+      if [ "$identifier" = system-dominfo ] || [ "$identifier" = session-dominfo ]; then
+        if rg -qi 'domain .*not found|failed to get domain|no domain with matching name' "$stderr_tmp" "$stdout_tmp"; then
+          outcome=absent
+        elif rg -qi 'failed to connect|connection (refused|denied)|cannot connect to' "$stderr_tmp" "$stdout_tmp"; then
+          outcome=connection-denied
+        elif rg -qi 'permission denied|operation not permitted|access denied|authorization failed' "$stderr_tmp" "$stdout_tmp"; then
+          outcome=permission-denied
+        else
+          outcome=failure
+        fi
+      elif rg -qi 'permission denied|operation not permitted|access denied|authorization failed' "$stderr_tmp" "$stdout_tmp"; then
+        outcome=permission-denied
+      else
+        outcome=failure
+      fi
+      ;;
   esac
   {
     printf 'command_identifier: %s\n' "$identifier"
@@ -115,10 +134,12 @@ record system-version 'virsh --readonly --connect qemu:///system version' virsh 
 record system-domains 'virsh --readonly --connect qemu:///system list --all' virsh --readonly --connect qemu:///system list --all
 record system-networks 'virsh --readonly --connect qemu:///system net-list --all' virsh --readonly --connect qemu:///system net-list --all
 record system-pools 'virsh --readonly --connect qemu:///system pool-list --all' virsh --readonly --connect qemu:///system pool-list --all
+record system-dominfo 'virsh --readonly --connect qemu:///system dominfo mail-core-9000' virsh --readonly --connect qemu:///system dominfo mail-core-9000
 record session-version 'virsh --readonly --connect qemu:///session version' virsh --readonly --connect qemu:///session version
 record session-domains 'virsh --readonly --connect qemu:///session list --all' virsh --readonly --connect qemu:///session list --all
 record session-networks 'virsh --readonly --connect qemu:///session net-list --all' virsh --readonly --connect qemu:///session net-list --all
 record session-pools 'virsh --readonly --connect qemu:///session pool-list --all' virsh --readonly --connect qemu:///session pool-list --all
+record session-dominfo 'virsh --readonly --connect qemu:///session dominfo mail-core-9000' virsh --readonly --connect qemu:///session dominfo mail-core-9000
 # Unprivileged local network, resolver, mount, and libvirt service state.
 record ip-link 'ip -brief link' ip -brief link
 record ip-address 'ip -brief address' ip -brief address

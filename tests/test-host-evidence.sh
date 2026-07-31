@@ -12,7 +12,23 @@ for command in hostnamectl cat uname date test virsh ip bridge nmcli resolvectl 
 #!/bin/sh
 printf '%s %s\n' "$(basename "$0")" "$*" >>"$FAKE_LOG"
 case "$(basename "$0")" in
-  virsh) [ "${FAKE_VIRSH_FAIL-}" != 1 ] || { echo 'permission denied' >&2; exit 1; };;
+  hostnamectl)
+    printf '%s\n' 'Static hostname: ws-matriarch' 'Operating System: Fedora Linux 44' 'Machine ID: 0123456789abcdef0123456789abcdef'
+    ;;
+  virsh)
+    case " $* " in
+      *' dominfo mail-core-9000 '*)
+        case ${FAKE_DOMINFO_OUTCOME-observed} in
+          observed) :;;
+          absent) echo "error: failed to get domain 'mail-core-9000'" >&2; exit 1;;
+          connection-denied) echo 'error: failed to connect to the hypervisor' >&2; exit 1;;
+          permission-denied) echo 'permission denied' >&2; exit 1;;
+          failure) echo 'unexpected libvirt failure' >&2; exit 1;;
+        esac
+        ;;
+    esac
+    [ "${FAKE_VIRSH_FAIL-}" != 1 ] || { echo 'permission denied' >&2; exit 1; }
+    ;;
 esac
 [ "${FAKE_TIMEOUT_COMMAND-}" != "$(basename "$0")" ] || exit 124
 printf 'sample 00:11:22:33:44:55 123e4567-e89b-12d3-a456-426614174000\n'
@@ -28,6 +44,13 @@ exec "$@"
 EOF
 chmod +x "$fakebin/timeout"
 for command in hostnamectl cat uname date test virsh ip bridge nmcli resolvectl findmnt systemctl; do cp "$fakebin/$command" "$fakeroot/usr/bin/$command"; done
+# The collector must not fall back to this hostile inherited-PATH candidate.
+cat >"$fakebin/virsh" <<'EOF'
+#!/bin/sh
+printf '%s\n' 'FAIL hostile PATH virsh executed' >&2
+exit 99
+EOF
+chmod +x "$fakebin/virsh"
 
 run_collector() {
   PATH="$fakebin:$PATH" FAKE_LOG="$scratch/commands.log" HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" --test-command-root "$fakeroot" "$1"
@@ -51,8 +74,17 @@ FAKE_TIMEOUT_COMMAND=hostnamectl run_collector "$scratch/evidence-one" >/dev/nul
 grep -q 'outcome: timed-out' "$scratch/evidence-one/evidence-01-hostnamectl.txt"
 grep -q 'outcome: observed' "$scratch/evidence-one/evidence-02-fedora-release.txt"
 grep -q '\[MAC-REDACTED\]' "$scratch/evidence-one/evidence-02-fedora-release.txt"
+grep -q 'Static hostname: ws-matriarch' "$scratch/evidence-one/evidence-01-hostnamectl.txt"
+grep -q 'Operating System: Fedora Linux 44' "$scratch/evidence-one/evidence-01-hostnamectl.txt"
+grep -qx 'Machine ID: \[REDACTED\]' "$scratch/evidence-one/evidence-01-hostnamectl.txt"
+! rg -q '0123456789abcdef0123456789abcdef' "$scratch/evidence-one"
 grep -q 'evidence_mode: test-only' "$scratch/evidence-one/evidence-01-hostnamectl.txt"
 ! grep -Eq 'sudo|su |pkexec' "$scratch/commands.log"
+grep -Fx 'virsh --readonly --connect qemu:///system dominfo mail-core-9000' "$scratch/commands.log"
+grep -Fx 'virsh --readonly --connect qemu:///session dominfo mail-core-9000' "$scratch/commands.log"
+grep -q 'outcome: observed' "$scratch/evidence-one/evidence-10-system-dominfo.txt"
+grep -q 'outcome: observed' "$scratch/evidence-one/evidence-15-session-dominfo.txt"
+! rg -q 'virsh.*(create|define|destroy|start|shutdown|reboot|reset|undefine|set)' "$root/scripts/collect-matriarch-readonly"
 FAKE_VIRSH_FAIL=1 run_collector "$scratch/evidence-two" >/dev/null
 grep -q 'outcome: permission-denied' "$scratch/evidence-two/evidence-06-system-version.txt"
 [ -f "$scratch/evidence-two/manifest.sha256" ]
@@ -64,9 +96,19 @@ wait "$first"; wait "$second"
 if HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" --test-command-root relative "$scratch/nope" >/dev/null 2>&1; then echo 'FAIL relative test root accepted' >&2; exit 1; fi
 mkdir "$scratch/test-root-target"; ln -s "$scratch/test-root-target" "$scratch/test-root-link"
 if HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" --test-command-root "$scratch/test-root-link" "$scratch/nope" >/dev/null 2>&1; then echo 'FAIL symlink test root accepted' >&2; exit 1; fi
+for outcome in absent connection-denied permission-denied failure; do
+  FAKE_DOMINFO_OUTCOME=$outcome run_collector "$scratch/evidence-dominfo-$outcome" >/dev/null
+  grep -q "outcome: $outcome" "$scratch/evidence-dominfo-$outcome/evidence-10-system-dominfo.txt"
+  grep -q "outcome: $outcome" "$scratch/evidence-dominfo-$outcome/evidence-15-session-dominfo.txt"
+done
+FAKE_TIMEOUT_COMMAND=virsh run_collector "$scratch/evidence-dominfo-timed-out" >/dev/null
+grep -q 'outcome: timed-out' "$scratch/evidence-dominfo-timed-out/evidence-10-system-dominfo.txt"
+grep -q 'outcome: timed-out' "$scratch/evidence-dominfo-timed-out/evidence-15-session-dominfo.txt"
 rm "$fakeroot/usr/bin/virsh"
 run_collector "$scratch/evidence-missing" >/dev/null
 grep -q 'outcome: unavailable' "$scratch/evidence-missing/evidence-06-system-version.txt"
+grep -q 'outcome: unavailable' "$scratch/evidence-missing/evidence-10-system-dominfo.txt"
+grep -q 'outcome: unavailable' "$scratch/evidence-missing/evidence-15-session-dominfo.txt"
 
 # Exercise the runner in a clean disposable clone, with fake Codex and fake
 # observations. This covers pre/post manifest checks and worker exit behavior.

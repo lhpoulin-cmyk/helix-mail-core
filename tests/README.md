@@ -15,8 +15,10 @@ metadata, and missing-result rejection. It never invokes host observation
 commands or a real Codex service.
 
 `test-host-evidence.sh` uses only fake observation commands and a fake Codex
-binary to verify the fixed collector profile, failure retention, path guards,
-concurrent destinations, and pre/post evidence integrity checks.
+binary to verify the fixed collector profile, system/session `dominfo`
+classification, Machine-ID sanitization, hostile-PATH resistance, failure
+retention, path guards, concurrent destinations, and pre/post evidence
+integrity checks.
 
 `phase4-runtime-acceptance.sh` is the guarded runtime checklist; it deliberately
 skips until its explicitly authorized target exists. `test-restore-structure.sh`
