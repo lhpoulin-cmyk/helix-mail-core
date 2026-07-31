@@ -67,12 +67,12 @@ start=$(/bin/cat "$run/start-commit" 2>/dev/null) || fail preflight 2
 [ "$(git rev-parse HEAD)" = "$start" ] || fail preflight 2
 [ -z "$(git status --porcelain --untracked-files=all)" ] || fail preflight 2
 profile=$(/bin/cat "$run/host-evidence-profile" 2>/dev/null || true)
-case "$profile" in ''|matriarch-libvirt-readonly-v1) ;; *) fail preflight 2;; esac
+case "$profile" in ''|matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1) ;; *) fail preflight 2;; esac
 evidence=$run/host-evidence
 
-if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
+if [ -n "$profile" ]; then
   stage=collection
-  HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" "$evidence" &
+  HOST_EVIDENCE_PROFILE="$profile" "$root/scripts/collect-matriarch-readonly" "$evidence" &
   child_pid=$! child_kind=collector
   wait "$child_pid"; collection_status=$?
   child_pid=
@@ -87,7 +87,7 @@ child_pid=$! child_kind=codex
 wait "$child_pid"; codex_status=$?
 child_pid=
 
-if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
+if [ -n "$profile" ]; then
   stage=evidence-postflight
   verify_evidence "$evidence" || fail evidence-postflight 1
 fi

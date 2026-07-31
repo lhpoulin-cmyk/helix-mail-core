@@ -31,7 +31,7 @@ profile_declarations=$(grep -c '^HOST_EVIDENCE_PROFILE=' "$packet" || true)
 case "$profile_declarations" in
   0) profile=none ;;
   1) profile=$(sed -n 's/^HOST_EVIDENCE_PROFILE=//p' "$packet")
-     [ "$profile" = 'matriarch-libvirt-readonly-v1' ] || { echo 'error: unsupported HOST_EVIDENCE_PROFILE declaration' >&2; exit 2; };;
+     case "$profile" in matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1) ;; *) echo 'error: unsupported HOST_EVIDENCE_PROFILE declaration' >&2; exit 2;; esac;;
   *) echo 'error: packet has multiple HOST_EVIDENCE_PROFILE declarations' >&2; exit 2;;
 esac
 
@@ -80,7 +80,7 @@ Ending commit: <full 40-lowercase-hex ending commit>
 
 Do not create the next packet. Do not approve your own work. Do not modify foreman doctrine. Stop after writing the result and exit.
 EOF
-  if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
+  if [ "$profile" != none ]; then
     cat <<EOF
 
 This is a profiled evidence run. The authoritative, supervisor-verified host
@@ -126,7 +126,7 @@ test_command_root_enabled: false
 authorization_sensitive_flags:
   run_directory_creation_enabled: $([ "$dry" = false ] && echo true || echo false)
   active_marker_creation_enabled: $([ "$dry" = false ] && echo true || echo false)
-  evidence_collection_enabled: $([ "$profile" = matriarch-libvirt-readonly-v1 ] && [ "$dry" = false ] && echo true || echo false)
+  evidence_collection_enabled: $([ "$profile" != none ] && [ "$dry" = false ] && echo true || echo false)
   tmux_launch_enabled: $([ "$dry" = false ] && echo true || echo false)
   codex_invocation_enabled: $([ "$dry" = false ] && echo true || echo false)
   git_mutation_enabled: false
@@ -151,7 +151,7 @@ render_json() {
   printf '  "paths": {"run": "%s", "evidence": "%s", "manifest": "%s", "prompt": "%s", "result": "%s", "log": "%s"},\n' "$(json_string "$run")" "$(json_string "$evidence")" "$(json_string "$manifest")" "$(json_string "$prompt_path")" "$(json_string "$result_path")" "$(json_string "$log_path")"
   printf '  "selected_profile": "%s",\n' "$(json_string "$profile")"
   printf '  "test_command_root_enabled": false,\n'
-  printf '  "authorization_sensitive_flags": {"run_directory_creation_enabled": %s, "active_marker_creation_enabled": %s, "evidence_collection_enabled": %s, "tmux_launch_enabled": %s, "codex_invocation_enabled": %s, "git_mutation_enabled": false},\n' "$([ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)" "$([ "$profile" = matriarch-libvirt-readonly-v1 ] && [ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)"
+  printf '  "authorization_sensitive_flags": {"run_directory_creation_enabled": %s, "active_marker_creation_enabled": %s, "evidence_collection_enabled": %s, "tmux_launch_enabled": %s, "codex_invocation_enabled": %s, "git_mutation_enabled": false},\n' "$([ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)" "$([ "$profile" != none ] && [ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)"
   printf '  "supervisor": {"executable": "%s", "argv": ["env", "HELIX_RUN_DIR=%s", "%s"]},\n' "$(json_string "$supervisor")" "$(json_string "$run")" "$(json_string "$supervisor")"
   printf '  "prompt": "%s"\n}\n' "$(json_string "$prompt")"
 }

@@ -20,10 +20,10 @@ if [ "${1-}" = --test-command-root ]; then
 fi
 
 profile=${HOST_EVIDENCE_PROFILE-}
-[ "$profile" = "matriarch-libvirt-readonly-v1" ] || {
-  echo 'error: unsupported host evidence profile' >&2
-  exit 2
-}
+case "$profile" in
+  matriarch-libvirt-readonly-v1|matriarch-storage-readonly-v1) ;;
+  *) echo 'error: unsupported host evidence profile' >&2; exit 2;;
+esac
 [ "$#" -eq 1 ] || { echo "usage: $0 RUN_EVIDENCE_DIRECTORY" >&2; exit 2; }
 destination=$1
 case "$destination" in /*) ;; *) echo 'error: evidence destination must be absolute' >&2; exit 2;; esac
@@ -47,7 +47,7 @@ export LC_ALL
 
 candidate() {
   case "$1" in
-    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl|cat|uname|date|test) ;;
+    hostnamectl|virsh|ip|bridge|nmcli|resolvectl|findmnt|systemctl|cat|uname|date|test|lsblk|df|blkid|pvs|vgs|lvs|btrfs|zpool|zfs) ;;
     *) return 1;;
   esac
   # Candidate order is repository-controlled; inherited PATH is never searched.
@@ -68,7 +68,9 @@ sanitize() {
     -e 's/[Mm]achine[[:space:]]+[Ii][Dd][[:space:]]*[:=][[:space:]]*[[:xdigit:]]{32}/Machine ID: [REDACTED]/g' \
     -e 's/([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}/[MAC-REDACTED]/g' \
     -e 's/[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}/[UUID-REDACTED]/gi' \
-    -e 's/([Ss]erial|[Uu]nique ID)[[:space:]]*[:=][[:space:]]*[^[:space:]]+/\1: [IDENTIFIER-REDACTED]/g'
+    -e 's/([Ss]erial|[Uu]nique ID)[[:space:]]*[:=][[:space:]]*[^[:space:]]+/\1: [IDENTIFIER-REDACTED]/g' \
+    -e 's/"(serial|uuid|partuuid|wwn)"[[:space:]]*:[[:space:]]*"[^"]*"/"\1":"[IDENTIFIER-REDACTED]"/gi' \
+    -e 's/(WWN|PARTUUID|UUID|SERIAL)="[^"]*"/\1="[IDENTIFIER-REDACTED]"/g'
 }
 
 record() {
@@ -124,6 +126,7 @@ record() {
 }
 
 sequence=0
+if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
 # Host/Fedora/kernel/time state and the fixed system/session libvirt planes.
 record hostnamectl 'hostnamectl' hostnamectl
 record fedora-release 'cat /etc/fedora-release' cat /etc/fedora-release
@@ -150,6 +153,21 @@ record resolver-status 'resolvectl status' resolvectl status
 record mount-state 'findmnt --kernel --output TARGET,SOURCE,FSTYPE,OPTIONS' findmnt --kernel --output TARGET,SOURCE,FSTYPE,OPTIONS
 record libvirtd-status 'systemctl is-active libvirtd' systemctl is-active libvirtd
 record virtqemud-status 'systemctl is-active virtqemud' systemctl is-active virtqemud
+else
+# Fixed unprivileged block-storage metadata only. Packet data cannot add a
+# device, path, or command to this allowlist.
+record lsblk 'lsblk --json --bytes --output NAME,KNAME,PATH,TYPE,SIZE,FSTYPE,FSVER,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SERIAL,WWN,TRAN,ROTA,PKNAME' lsblk --json --bytes --output NAME,KNAME,PATH,TYPE,SIZE,FSTYPE,FSVER,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SERIAL,WWN,TRAN,ROTA,PKNAME
+record findmnt 'findmnt --json' findmnt --json
+record df 'df --bytes --output=source,fstype,size,used,avail,pcent,target' df --bytes --output=source,fstype,size,used,avail,pcent,target
+record blkid 'blkid' blkid
+record pvs 'pvs --noheadings --units b --nosuffix --options pv_name,pv_size,pv_free,vg_name,pv_attr' pvs --noheadings --units b --nosuffix --options pv_name,pv_size,pv_free,vg_name,pv_attr
+record vgs 'vgs --noheadings --units b --nosuffix --options vg_name,vg_size,vg_free,vg_attr' vgs --noheadings --units b --nosuffix --options vg_name,vg_size,vg_free,vg_attr
+record lvs 'lvs --noheadings --units b --nosuffix --options lv_name,vg_name,lv_size,lv_attr,lv_path' lvs --noheadings --units b --nosuffix --options lv_name,vg_name,lv_size,lv_attr,lv_path
+record btrfs 'btrfs filesystem show' btrfs filesystem show
+record zpool 'zpool status' zpool status
+record zfs 'zfs list' zfs list
+record mdstat 'cat /proc/mdstat' cat /proc/mdstat
+fi
 
 (
   cd -- "$destination" || exit 1

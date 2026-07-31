@@ -20,16 +20,19 @@ it cannot invoke the collector. A zero Codex exit without `worker-result.md`
 is a failed run. SIGKILL, host loss, and any unknown completion state are never
 accepted as completion.
 
-Packets that declare the exact metadata-only line
-`HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1` receive a fresh
+Packets that declare either exact profile line
+`HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1` or
+`HOST_EVIDENCE_PROFILE=matriarch-storage-readonly-v1` receive a fresh
 `host-evidence/` directory before Codex starts. The fixed collector uses only
-its hard-coded, timed, unprivileged read-only allowlist; packets, prompts,
-environment values, and model output cannot add commands. It records sanitized
-per-command results and hashes every evidence file in `manifest.sha256`. The
-worker verifies that manifest before launch and after exit, and fails the
-handoff if evidence is missing, changed, symlinked, or added. Evidence is
-authoritative for that run; the worker must not repeat host inspection. Raw
-evidence is ignored and remains local.
+the hard-coded, timed, unprivileged read-only allowlist for the selected
+profile; packets, prompts, environment values, and model output cannot add
+commands. The storage profile collects block-device and storage-subsystem
+metadata only and redacts UUID, PARTUUID, serial, and WWN values. It records
+sanitized per-command results and hashes every evidence file in
+`manifest.sha256`. The worker verifies that manifest before launch and after
+exit, and fails the handoff if evidence is missing, changed, symlinked, or
+added. Evidence is authoritative for that run; the worker must not repeat host
+inspection. Raw evidence is ignored and remains local.
 
 For profiled runs, the generated prompt names the run-local evidence directory
 and manifest, treats them as supervisor-verified and authoritative, forbids

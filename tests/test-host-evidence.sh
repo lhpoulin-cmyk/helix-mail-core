@@ -7,7 +7,7 @@ fakebin=$scratch/fake-bin
 fakeroot=$scratch/fake-command-root
 mkdir -p "$fakebin" "$fakeroot/usr/bin"
 
-for command in hostnamectl cat uname date test virsh ip bridge nmcli resolvectl findmnt systemctl; do
+for command in hostnamectl cat uname date test virsh ip bridge nmcli resolvectl findmnt systemctl lsblk df blkid pvs vgs lvs btrfs zpool zfs; do
   cat >"$fakebin/$command" <<'EOF'
 #!/bin/sh
 printf '%s %s\n' "$(basename "$0")" "$*" >>"$FAKE_LOG"
@@ -43,7 +43,7 @@ if [ "${FAKE_TIMEOUT_COMMAND-}" = "$1" ]; then exit 124; fi
 exec "$@"
 EOF
 chmod +x "$fakebin/timeout"
-for command in hostnamectl cat uname date test virsh ip bridge nmcli resolvectl findmnt systemctl; do cp "$fakebin/$command" "$fakeroot/usr/bin/$command"; done
+for command in hostnamectl cat uname date test virsh ip bridge nmcli resolvectl findmnt systemctl lsblk df blkid pvs vgs lvs btrfs zpool zfs; do cp "$fakebin/$command" "$fakeroot/usr/bin/$command"; done
 # The collector must not fall back to this hostile inherited-PATH candidate.
 cat >"$fakebin/virsh" <<'EOF'
 #!/bin/sh
@@ -54,6 +54,10 @@ chmod +x "$fakebin/virsh"
 
 run_collector() {
   PATH="$fakebin:$PATH" FAKE_LOG="$scratch/commands.log" HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1 "$root/scripts/collect-matriarch-readonly" --test-command-root "$fakeroot" "$1"
+}
+
+run_storage_collector() {
+  PATH="$fakebin:$PATH" FAKE_LOG="$scratch/storage-commands.log" HOST_EVIDENCE_PROFILE=matriarch-storage-readonly-v1 "$root/scripts/collect-matriarch-readonly" --test-command-root "$fakeroot" "$1"
 }
 
 mkdir "$scratch/evidence"
@@ -109,6 +113,13 @@ run_collector "$scratch/evidence-missing" >/dev/null
 grep -q 'outcome: unavailable' "$scratch/evidence-missing/evidence-06-system-version.txt"
 grep -q 'outcome: unavailable' "$scratch/evidence-missing/evidence-10-system-dominfo.txt"
 grep -q 'outcome: unavailable' "$scratch/evidence-missing/evidence-15-session-dominfo.txt"
+
+run_storage_collector "$scratch/evidence-storage" >/dev/null
+grep -q 'command_identifier: lsblk' "$scratch/evidence-storage/evidence-01-lsblk.txt"
+grep -q 'command_identifier: mdstat' "$scratch/evidence-storage/evidence-11-mdstat.txt"
+grep -Fx 'lsblk --json --bytes --output NAME,KNAME,PATH,TYPE,SIZE,FSTYPE,FSVER,LABEL,UUID,PARTUUID,MOUNTPOINTS,MODEL,SERIAL,WWN,TRAN,ROTA,PKNAME' "$scratch/storage-commands.log"
+! rg -q 'sudo|su |pkexec|mount|mkfs|parted|fdisk' "$scratch/storage-commands.log"
+(cd "$scratch/evidence-storage" && sha256sum -c manifest.sha256 >/dev/null)
 
 # Exercise the runner in a clean disposable clone, with fake Codex and fake
 # observations. This covers pre/post manifest checks and worker exit behavior.
