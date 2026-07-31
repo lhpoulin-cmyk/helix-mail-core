@@ -200,8 +200,9 @@ The first attempt stopped before formatting because its generic `blkid` guard
 treated the expected new GPT `PARTUUID` as a filesystem signature. The guard
 was corrected and committed as `df6f2fe78edf03959a4b66f7d32f33516ab70479`.
 The resumed pre-format check established that `p5` had no filesystem `TYPE` or
-label. `mkfs.xfs` then rejected `mail-core-vmstore` before writing because XFS
-labels are limited to 12 characters and the requested label is 17 characters.
+label. `mkfs.xfs` then rejected the original overlength XFS-label proposal
+before writing because XFS labels are limited to 12 characters. The
+operator-approved `mailcore-vm` label replaced that proposal.
 
 Current state: `p5` is unformatted and unmounted; no fstab entry, mountpoint,
 SELinux mapping, libvirt storage pool, qcow2 volume, network, domain, or VM
