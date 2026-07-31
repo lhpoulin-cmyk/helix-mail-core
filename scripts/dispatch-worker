@@ -1,8 +1,25 @@
 #!/bin/sh
 set -eu
-usage(){ echo "usage: $0 [--dry-run] implementation/<packet>.packet.md" >&2; exit 2; }
+
+usage() {
+  echo "usage: $0 [--dry-run] [--format=json] implementation/<packet>.packet.md" >&2
+  exit 2
+}
+
 dry=false
-case "$#" in 1) input=$1;; 2) [ "$1" = --dry-run ] || usage; dry=true; input=$2;; *) usage;; esac
+format=text
+input=
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --dry-run) dry=true ;;
+    --format=json) format=json ;;
+    --format=*) usage ;;
+    *) [ -z "$input" ] || usage; input=$1 ;;
+  esac
+  shift
+done
+[ -n "$input" ] || usage
+
 root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo 'error: not a Git worktree' >&2; exit 2; }
 root=$(CDPATH= cd -- "$root" && pwd -P)
 case "$input" in /*) candidate=$input;; *) candidate=$root/$input;; esac
@@ -12,11 +29,12 @@ case "$packet" in "$root"/implementation/*) ;; *) echo 'error: packet escapes im
 rel=${packet#"$root"/}
 profile_declarations=$(grep -c '^HOST_EVIDENCE_PROFILE=' "$packet" || true)
 case "$profile_declarations" in
-  0) profile=;;
+  0) profile=none ;;
   1) profile=$(sed -n 's/^HOST_EVIDENCE_PROFILE=//p' "$packet")
      [ "$profile" = 'matriarch-libvirt-readonly-v1' ] || { echo 'error: unsupported HOST_EVIDENCE_PROFILE declaration' >&2; exit 2; };;
   *) echo 'error: packet has multiple HOST_EVIDENCE_PROFILE declarations' >&2; exit 2;;
 esac
+
 dirty=$(git status --porcelain --untracked-files=all)
 [ -z "$dirty" ] || { echo 'error: dirty worktree' >&2; printf '%s\n' "$dirty" >&2; exit 1; }
 ignored=$(git status --porcelain --ignored=matching --untracked-files=all | sed -n 's/^!! //p')
@@ -26,13 +44,22 @@ EOF
 fi
 active=$root/handoff/active-run
 [ ! -e "$active" ] || { echo "error: active run: $(cat "$active")" >&2; exit 1; }
-start=$(git rev-parse HEAD); run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)-$$"; run=$root/handoff/runs/$run_id; session="mail-worker-$run_id"
-printf 'run ID: %s\ntmux session: %s\npacket: %s\nstarting commit: %s\nlog path: %s/worker.log\n' "$run_id" "$session" "$rel" "$start" "$run"
-[ "$dry" = false ] || { echo 'dry run: would launch detached headless codex exec'; exit 0; }
-umask 077; mkdir -p "$root/handoff/runs"; mkdir "$run" || exit 1
-printf '%s\n' "$rel" >"$run/packet-path"; printf '%s\n' "$start" >"$run/start-commit"
-[ -z "$profile" ] || printf '%s\n' "$profile" >"$run/host-evidence-profile"
-cat >"$run/prompt.txt" <<EOF
+
+# This computes a prospective identifier only.  It is not persisted or reserved
+# until the non-dry dispatch creates its run directory.
+start=$(git rev-parse HEAD)
+run_id="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)-$$"
+run=$root/handoff/runs/$run_id
+session="mail-worker-$run_id"
+evidence=$run/host-evidence
+manifest=$evidence/manifest.sha256
+prompt_path=$run/prompt.txt
+result_path=$run/worker-result.md
+log_path=$run/worker.log
+supervisor=$root/scripts/supervise-worker-headless
+
+make_prompt() {
+  cat <<EOF
 You are the implementation worker for helix-mail-core.
 
 Read AGENTS.md first.
@@ -45,19 +72,20 @@ Starting commit:
 
     $start
 
-Do not expand scope. The packet is the sole task authority. This packet permits read-only Fedora/KVM/libvirt inspection and repository modifications needed to record and render the inventory. It does not permit creation or mutation of a VM, libvirt domain, storage pool, network, NetworkManager configuration, DNS record, certificate, credential, package, service, or Fastmail configuration.
+Do not expand scope. The packet is the sole task authority. It does not permit creation or mutation of a VM, libvirt domain, storage pool, network, NetworkManager configuration, DNS record, certificate, credential, package, service, or Fastmail configuration.
 
-Run all required validation. Commit completed repository changes as one bounded implementation commit. Write the factual result to $run/worker-result.md including packet path, starting commit, ending commit, files changed, tests run, tests passed and failed, unresolved values, live-state observations and evidence timestamps, live mutation status, and exact stop reason if blocked.
+Run all required validation. Commit completed repository changes as one bounded implementation commit. Write the factual result to $result_path including packet path, starting commit, ending commit, files changed, tests run, tests passed and failed, unresolved values, live-state observations and evidence timestamps, live mutation status, and exact stop reason if blocked.
 
 Do not create the next packet. Do not approve your own work. Do not modify foreman doctrine. Stop after writing the result and exit.
 EOF
-if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then cat >>"$run/prompt.txt" <<EOF
+  if [ "$profile" = matriarch-libvirt-readonly-v1 ]; then
+    cat <<EOF
 
 This is a profiled evidence run. The authoritative, supervisor-verified host
 evidence is only at:
 
-    $run/host-evidence/
-    $run/host-evidence/manifest.sha256
+    $evidence/
+    $manifest
 
 Do not run host-inspection commands or inspect host state by any other means.
 Do not modify evidence, retry or supplement collection, infer historical state,
@@ -65,7 +93,80 @@ or resolve inconclusive evidence. Every host-related conclusion must cite the
 specific evidence item(s) supporting it. Evidence is authoritative only for
 this run and does not authorize live changes.
 EOF
+  fi
+}
+
+prompt=$(make_prompt)
+
+json_string() {
+  # All rendered values are repository-derived; quote control characters so the
+  # dry-run JSON is a faithful representation rather than a shell command.
+  printf '%s' "$1" | sed ':a;N;$!ba;s/\\/\\\\/g;s/"/\\"/g;s/\n/\\n/g;s/\r/\\r/g;s/\t/\\t/g'
+}
+
+render_text() {
+  cat <<EOF
+dry_run: $dry
+format: text
+packet: $rel
+starting_commit: $start
+prospective_run_id: $run_id
+prospective_tmux_session: $session
+worktree_root: $root
+run_path: $run
+evidence_path: $evidence
+manifest_path: $manifest
+prompt_path: $prompt_path
+result_path: $result_path
+log_path: $log_path
+selected_profile: $profile
+test_command_root_enabled: false
+authorization_sensitive_flags:
+  run_directory_creation_enabled: $([ "$dry" = false ] && echo true || echo false)
+  active_marker_creation_enabled: $([ "$dry" = false ] && echo true || echo false)
+  evidence_collection_enabled: $([ "$profile" = matriarch-libvirt-readonly-v1 ] && [ "$dry" = false ] && echo true || echo false)
+  tmux_launch_enabled: $([ "$dry" = false ] && echo true || echo false)
+  codex_invocation_enabled: $([ "$dry" = false ] && echo true || echo false)
+  git_mutation_enabled: false
+supervisor_executable: $supervisor
+supervisor_argv:
+  [0]: env
+  [1]: HELIX_RUN_DIR=$run
+  [2]: $supervisor
+prompt:
+EOF
+  printf '%s\n' "$prompt"
+}
+
+render_json() {
+  printf '{\n'
+  printf '  "dry_run": %s,\n' "$dry"
+  printf '  "packet": "%s",\n' "$(json_string "$rel")"
+  printf '  "starting_commit": "%s",\n' "$(json_string "$start")"
+  printf '  "prospective_run_id": "%s",\n' "$(json_string "$run_id")"
+  printf '  "prospective_tmux_session": "%s",\n' "$(json_string "$session")"
+  printf '  "worktree_root": "%s",\n' "$(json_string "$root")"
+  printf '  "paths": {"run": "%s", "evidence": "%s", "manifest": "%s", "prompt": "%s", "result": "%s", "log": "%s"},\n' "$(json_string "$run")" "$(json_string "$evidence")" "$(json_string "$manifest")" "$(json_string "$prompt_path")" "$(json_string "$result_path")" "$(json_string "$log_path")"
+  printf '  "selected_profile": "%s",\n' "$(json_string "$profile")"
+  printf '  "test_command_root_enabled": false,\n'
+  printf '  "authorization_sensitive_flags": {"run_directory_creation_enabled": %s, "active_marker_creation_enabled": %s, "evidence_collection_enabled": %s, "tmux_launch_enabled": %s, "codex_invocation_enabled": %s, "git_mutation_enabled": false},\n' "$([ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)" "$([ "$profile" = matriarch-libvirt-readonly-v1 ] && [ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)" "$([ "$dry" = false ] && echo true || echo false)"
+  printf '  "supervisor": {"executable": "%s", "argv": ["env", "HELIX_RUN_DIR=%s", "%s"]},\n' "$(json_string "$supervisor")" "$(json_string "$run")" "$(json_string "$supervisor")"
+  printf '  "prompt": "%s"\n}\n' "$(json_string "$prompt")"
+}
+
+if [ "$dry" = true ]; then
+  case "$format" in text) render_text;; json) render_json;; esac
+  exit 0
 fi
-printf '%s %s\n' "$run_id" "$session" >"$active.tmp"; mv "$active.tmp" "$active"
-if ! tmux new-session -d -s "$session" -c "$root" env HELIX_RUN_DIR="$run" "$root/scripts/supervise-worker-headless"; then rm -f "$active"; echo 'error: tmux launch failed' >&2; exit 1; fi
+
+umask 077
+mkdir -p "$root/handoff/runs"
+mkdir "$run" || exit 1
+printf '%s\n' "$rel" >"$run/packet-path"
+printf '%s\n' "$start" >"$run/start-commit"
+[ "$profile" = none ] || printf '%s\n' "$profile" >"$run/host-evidence-profile"
+printf '%s' "$prompt" >"$prompt_path"
+printf '%s %s\n' "$run_id" "$session" >"$active.tmp"
+mv "$active.tmp" "$active"
+if ! tmux new-session -d -s "$session" -c "$root" env HELIX_RUN_DIR="$run" "$supervisor"; then rm -f "$active"; echo 'error: tmux launch failed' >&2; exit 1; fi
 printf 'dispatched: %s\n' "$run_id"

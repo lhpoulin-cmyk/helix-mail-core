@@ -123,10 +123,37 @@ unprofiled=$(find "$repo/handoff/runs" -mindepth 1 -maxdepth 1 -type d | sort | 
 ! grep -q 'This is a profiled evidence run' "$unprofiled/prompt.txt"
 rm -f "$repo/handoff/active-run"
 
-# Dispatcher dry-run accepts only the exact declaration and creates no run.
-if (cd "$repo" && HOST_EVIDENCE_PROFILE='attacker-value' "$repo/scripts/dispatch-worker" --dry-run implementation/2026-07-31-matriarch-local-readonly-inventory.packet.md >/dev/null); then :; else
+# Dispatcher dry-run is a complete plan only: fake-only inspection proves it
+# creates no handoff state, launches no fake tmux, and never enables a test root.
+before_runs=$(find "$repo/handoff/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort)
+before_status=$(git -C "$repo" status --porcelain --untracked-files=all)
+: >"$scratch/dispatch.log"
+if ! (cd "$repo" && HOST_EVIDENCE_PROFILE='attacker-value' "$repo/scripts/dispatch-worker" --dry-run --format=json implementation/2026-07-31-matriarch-local-readonly-inventory.packet.md >"$scratch/profiled-plan.json"); then
   echo 'FAIL exact packet profile was not accepted' >&2; exit 1
 fi
+jq -e '.dry_run == true and .selected_profile == "matriarch-libvirt-readonly-v1" and .test_command_root_enabled == false' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.paths.run | test("/handoff/runs/[^/]+$")' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.paths.evidence | endswith("/host-evidence")' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.paths.manifest | endswith("/host-evidence/manifest.sha256")' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.supervisor.executable | endswith("/scripts/supervise-worker-headless")' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.supervisor.argv[0] == "env" and (.supervisor.argv[1] | startswith("HELIX_RUN_DIR=")) and (.supervisor.argv[2] == .supervisor.executable)' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.authorization_sensitive_flags.run_directory_creation_enabled == false and .authorization_sensitive_flags.active_marker_creation_enabled == false and .authorization_sensitive_flags.evidence_collection_enabled == false and .authorization_sensitive_flags.tmux_launch_enabled == false and .authorization_sensitive_flags.codex_invocation_enabled == false and .authorization_sensitive_flags.git_mutation_enabled == false' "$scratch/profiled-plan.json" >/dev/null
+jq -e '.prompt | contains("authoritative, supervisor-verified host\nevidence") and contains("Do not run host-inspection commands") and contains("Do not modify evidence, retry or supplement collection") and contains("or resolve inconclusive evidence") and contains("packet is the sole task authority")' "$scratch/profiled-plan.json" >/dev/null
+after_runs=$(find "$repo/handoff/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort)
+[ "$before_runs" = "$after_runs" ] || { echo 'FAIL dry run created a run' >&2; exit 1; }
+[ "$before_status" = "$(git -C "$repo" status --porcelain --untracked-files=all)" ] || { echo 'FAIL dry run changed Git state' >&2; exit 1; }
+[ ! -s "$scratch/dispatch.log" ] || { echo 'FAIL dry run invoked fake tmux' >&2; exit 1; }
+
+if ! (cd "$repo" && HOST_EVIDENCE_PROFILE='attacker-value' "$repo/scripts/dispatch-worker" --dry-run implementation/2026-07-31-headless-run-finalization.packet.md >"$scratch/unprofiled-plan.txt"); then
+  echo 'FAIL unprofiled dry run was rejected' >&2; exit 1
+fi
+grep -q '^selected_profile: none$' "$scratch/unprofiled-plan.txt"
+grep -q '^test_command_root_enabled: false$' "$scratch/unprofiled-plan.txt"
+grep -q '^supervisor_argv:$' "$scratch/unprofiled-plan.txt"
+grep -q '^prompt:$' "$scratch/unprofiled-plan.txt"
+! grep -q 'authoritative, supervisor-verified host' "$scratch/unprofiled-plan.txt"
+! grep -q 'tmux new-session\|codex exec\|--test-command-root' "$scratch/unprofiled-plan.txt"
+
 packet=$scratch/injected.packet.md
 printf '%s\n' 'HOST_EVIDENCE_PROFILE=matriarch-libvirt-readonly-v1; evil' >"$packet"
 cp "$packet" "$repo/implementation/test-injected-profile.packet.md"
