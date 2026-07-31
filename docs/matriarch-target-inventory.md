@@ -158,6 +158,24 @@ contract continues to use `VM_DATA_STORAGE` and remains
 `UNRESOLVED_DURABLE_DATA_STORAGE`. No value above authorizes a pool, directory,
 disk image, format, partition, mount change, or VM creation.
 
+### Operator nomination correction — 2026-07-31
+
+The operator nominated a future 256 GiB sibling partition, intended to become
+`/dev/nvme1n1p5`, from the currently unpartitioned tail of `nvme1n1`. The
+sealed `lsblk` evidence supports this distinction: the 2,000,398,934,016-byte
+disk contains only partitions `p1` through `p4`, whose recorded sizes total
+1,625,837,010,944 bytes, leaving 374,561,923,072 bytes (about 348.8 GiB)
+unaccounted for by the current partition list. The active Fedora Btrfs root is
+`nvme1n1p3`; it is not the nominated source and must not be shrunk or reused.
+
+This is an operator nomination and capacity observation, not proof of exact
+on-disk free-extent geometry, ownership clearance, or future storage format.
+It does not authorize creation of `p5`, any filesystem, mount, directory,
+libvirt pool, disk image, or VM. `VM_STORAGE`, `SYSTEM_DISK_REFERENCE`,
+`MAIL_DATA_STORAGE`, and `MAIL_DATA_DISK_REFERENCE` remain unresolved pending
+a separately reviewed implementation packet that validates the exact free
+extent and renders the bounded future mutation.
+
 ### Stop condition
 
 Stop at Decision 1. An operator nomination and a separately authorized
