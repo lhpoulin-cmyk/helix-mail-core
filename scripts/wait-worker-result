@@ -1,0 +1,34 @@
+#!/bin/sh
+# Wait for a committed worker result corresponding to the last dispatch.
+set -eu
+
+usage() { echo "usage: $0 [--timeout seconds]" >&2; exit 2; }
+timeout=1800
+case "$#" in
+  0) ;;
+  2) [ "$1" = "--timeout" ] || usage; timeout=$2 ;;
+  *) usage ;;
+esac
+case "$timeout" in *[!0-9]*|'') usage ;; esac
+root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: run from inside a Git worktree" >&2; exit 2; }
+root=$(CDPATH= cd -- "$root" && pwd -P)
+state=$root/handoff/dispatch-state.env
+result=$root/handoff/worker-result.md
+[ -r "$state" ] || { echo "error: no dispatch state exists; use scripts/dispatch-worker first" >&2; exit 2; }
+start_commit=$(sed -n 's/^START_COMMIT=//p' "$state" | tail -n 1)
+case "$start_commit" in [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;; *) echo "error: dispatch state has an invalid starting commit" >&2; exit 2 ;; esac
+deadline=$(( $(date -u +%s) + timeout ))
+while [ "$(date -u +%s)" -le "$deadline" ]; do
+  if [ -f "$result" ] && [ "$result" -nt "$state" ]; then
+    recorded_start=$(sed -n 's/^Starting commit:[[:space:]]*//p' "$result" | head -n 1 | tr -d '[:space:]')
+    ending_commit=$(sed -n 's/^Ending commit:[[:space:]]*//p' "$result" | head -n 1 | tr -d '[:space:]')
+    if [ "$recorded_start" = "$start_commit" ]; then
+      git rev-parse --verify --quiet "$ending_commit^{commit}" >/dev/null || { echo "error: worker result names an ending commit that does not exist: $ending_commit" >&2; exit 1; }
+      printf 'worker result: %s\nstarting commit: %s\nending commit: %s\n' "$result" "$recorded_start" "$ending_commit"
+      exit 0
+    fi
+  fi
+  sleep 2
+done
+echo "timeout: no new worker result matching dispatch start $start_commit after ${timeout}s" >&2
+exit 1

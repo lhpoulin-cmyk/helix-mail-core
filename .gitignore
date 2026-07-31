@@ -2,9 +2,10 @@
 inventory/production/values.env
 inventory/production/*.secret
 evidence/private/
+handoff/dispatch-state.env
+handoff/worker-result.md
 *.key
 *.pem
 *.p12
 *.pfx
 !config/examples/example-ca.pem
-
