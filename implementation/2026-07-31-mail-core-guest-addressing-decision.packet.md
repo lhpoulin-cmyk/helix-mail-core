@@ -121,3 +121,48 @@ Do not create, define, start, attach, or modify VM `mail-core-9000`; create
 or alter a libvirt network; send DHCP requests; add, remove, or modify any
 route; alter NetworkManager, firewall, DNS, TLS, storage, or credentials; or
 change the frozen bridge interfaces.
+
+## Operator Decision 4 — accepted guest network values
+
+The operator supplies the missing static-allocation authority. Freeze:
+
+```text
+GUEST_IPV4=192.168.100.90
+GUEST_PREFIX=24
+GUEST_GATEWAY=192.168.100.1
+GUEST_DNS_SERVERS=192.168.10.251,192.168.10.252
+GUEST_MTU=1500
+GUEST_NETWORK_MODEL=single-nic
+NETWORK_ATTACHMENT=br-lab10
+```
+
+The gateway is the evidence-supported Netbrain Lab-10 address, not an inferred
+host route. The 1500 guest MTU is a routed-path decision; it does not alter
+the frozen 9000-MTU host bridge.
+
+These values are accepted pending one immediate pre-guest-activation collision
+preflight. Do not substitute another address, add a second NIC, attach Admin
+VLAN 80, use libvirt NAT or macvtap, or reopen the frozen bridge decision.
+
+### Required immediate collision preflight
+
+Immediately before defining, starting, or attaching any guest that would use
+`192.168.100.90`, collect fresh, sanitized evidence that:
+
+1. Netbrain has no interface address at that address.
+2. The address is outside/excluded from every active DHCP pool, or has an
+   explicit dynamic-allocation reservation/exclusion.
+3. No current DHCP lease claims it.
+4. No RouterOS ARP or local Lab-10 neighbor entry claims it.
+5. Configured internal DNS resolvers have no forward or reverse record
+   assigning it to another identity.
+
+The explicit operator allocation plus the completed Netbrain evidence is
+sufficient only if every check passes. ARP absence alone is not sufficient.
+If the address overlaps an active DHCP pool, stop and prepare a separate,
+narrow Netbrain reservation/exclusion packet for this exact address; do not
+select a replacement silently.
+
+The required packet is
+`implementation/2026-07-31-mail-core-guest-address-collision-preflight.packet.md`.
+It must be reviewed before VM construction. No VM 9000 creation is authorized.
