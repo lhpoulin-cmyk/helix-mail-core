@@ -22,6 +22,14 @@ block the current soak or the best-effort bridge.
 The existing queue entry must not be released or rescheduled until its state,
 retry policy, route association, and duplicate-delivery risk are understood.
 
+Late observation: after the diagnosis commit, Stalwart rediscovered the entry,
+retried it through the then-active fallback MX route, received one temporary
+451 response, rescheduled it for two minutes later, and completed delivery with
+SMTP 250. Fastmail contained exactly one copy. This supersedes the time-bounded
+conclusion that the test copy was lost, without rewriting the earlier evidence.
+It does not prove restart-safe recovery through the intended authenticated
+relay and does not reopen that beta gate.
+
 ## Observed diagnosis
 
 The required object is no longer present. The supported command

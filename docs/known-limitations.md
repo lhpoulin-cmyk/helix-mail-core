@@ -11,10 +11,12 @@ restart-safe outbound queueing.
 > delivery is unaffected.
 
 Normal authenticated copies from both administrative mailboxes have received
-SMTP 250 acceptance from Fastmail. A bounded interruption test also proved that
-an active generated copy can disappear when Stalwart restarts before the
-attempt reaches a terminal or rescheduled state. No local message was lost or
-changed.
+SMTP 250 acceptance from Fastmail. During a bounded interruption test, an
+active generated copy temporarily disappeared from management queries and had
+no terminal event during the original observation window. It later recovered
+and delivered exactly once through the fallback MX route. That late recovery
+does not prove restart safety for the intended authenticated relay path. No
+local message was lost or changed.
 
 For beta operations:
 
