@@ -111,6 +111,11 @@ def write_wallet_password(iface, handle, folder, key, secret):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument(
+        "--resume-admin-partial",
+        action="store_true",
+        help="resume only the reviewed partial state left by the first run",
+    )
     args = parser.parse_args()
     if not args.apply:
         fail("render-only by default; pass --apply under the reviewed packet")
@@ -152,17 +157,71 @@ def main():
         [identities_path.read_text(errors="replace") if identities_path.exists() else "",
          transports_path.read_text(errors="replace") if transports_path.exists() else ""]
     )
-    for _slug, identity, _display in ACCOUNTS:
-        if identity in existing_text:
-            fail(f"identity or transport already exists: {identity}")
+    if args.resume_admin_partial:
+        if "cluster-admin@home.arpa" in existing_text:
+            fail("cluster-admin partial state is not expected")
+        admin_identity_groups = [
+            group for group in identity_cfg.sections()
+            if identity_cfg[group].get("Email Address") == "admin@home.arpa"
+        ]
+        admin_transport_groups = [
+            group for group in transport_cfg.sections()
+            if transport_cfg[group].get("user") == "admin@home.arpa"
+        ]
+        if len(admin_identity_groups) != 1 or len(admin_transport_groups) != 1:
+            fail("reviewed admin partial state is absent or ambiguous")
+        admin_identity_group = admin_identity_groups[0]
+        admin_transport_group = admin_transport_groups[0]
+        admin_uoid = int(identity_cfg[admin_identity_group].get("uoid", "0"))
+        admin_transport_id = int(
+            transport_cfg[admin_transport_group].get("id", "0")
+        )
+        expected_identity = {
+            "Default Domain": "home.arpa",
+            "Email Address": "admin@home.arpa",
+            "Identity": "Admin (home.arpa)",
+            "Name": "Admin",
+            "Transport": str(admin_transport_id),
+            "uoid": str(admin_uoid),
+        }
+        expected_transport = {
+            "auth": "true", "authtype": "1", "encryption": "2",
+            "host": MAIL_HOST, "id": str(admin_transport_id),
+            "identifier": "SMTP", "name": "SMTP (admin@home.arpa)",
+            "port": "587", "storepass": "true", "user": "admin@home.arpa",
+        }
+        if admin_uoid <= 0 or admin_transport_id <= 0:
+            fail("reviewed admin identifiers are invalid")
+        if any(identity_cfg[admin_identity_group].get(k) != v
+               for k, v in expected_identity.items()):
+            fail("admin identity differs from the reviewed partial state")
+        if any(transport_cfg[admin_transport_group].get(k) != v
+               for k, v in expected_transport.items()):
+            fail("admin transport differs from the reviewed partial state")
+    else:
+        for _slug, identity, _display in ACCOUNTS:
+            if identity in existing_text:
+                fail(f"identity or transport already exists: {identity}")
 
     bus = dbus.SessionBus()
     manager_obj = bus.get_object("org.freedesktop.Akonadi.Control", "/AgentManager")
     manager = dbus.Interface(manager_obj, "org.freedesktop.Akonadi.AgentManager")
+    empty_imap_resources = []
     for instance in manager.agentInstances():
         name = str(manager.agentInstanceName(instance))
-        if any(identity in name for _slug, identity, _display in ACCOUNTS):
+        if not args.resume_admin_partial and any(
+            identity in name for _slug, identity, _display in ACCOUNTS
+        ):
             fail(f"Akonadi resource already exists: {name}")
+        if args.resume_admin_partial and str(instance).startswith("akonadi_imap_resource_"):
+            service = f"org.freedesktop.Akonadi.Resource.{instance}"
+            wait_service(bus, service)
+            obj = bus.get_object(service, "/Settings")
+            candidate = dbus.Interface(obj, "org.kde.Akonadi.Imap.Settings")
+            if not str(candidate.imapServer()) and not str(candidate.userName()):
+                empty_imap_resources.append(str(instance))
+    if args.resume_admin_partial and len(empty_imap_resources) != 1:
+        fail("expected exactly one empty IMAP resource from the interrupted run")
 
     STATE.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(STATE, 0o700)
@@ -182,8 +241,8 @@ def main():
         for group in transport_cfg.sections() if group.startswith("Transport ")
     }
     rng = random.SystemRandom()
-    uoids = []
-    transport_ids = []
+    uoids = [admin_uoid] if args.resume_admin_partial else []
+    transport_ids = [admin_transport_id] if args.resume_admin_partial else []
     while len(uoids) < 2:
         candidate = rng.randrange(1, 2**31 - 1)
         if candidate not in used_uoids and candidate not in uoids:
@@ -211,7 +270,13 @@ def main():
     for offset, (slug, identity, display) in enumerate(ACCOUNTS):
         transport_id = transport_ids[offset]
         uoid = uoids[offset]
-        identity_group = f"Identity #{next_identity_index + offset}"
+        if args.resume_admin_partial and offset == 0:
+            identity_group = admin_identity_group
+        else:
+            identity_group = f"Identity #{next_identity_index}"
+            while identity_group in identity_cfg:
+                next_identity_index += 1
+                identity_group = f"Identity #{next_identity_index}"
         identity_values = {
             "Default Domain": "home.arpa",
             "Disable Fcc": "false",
@@ -224,8 +289,9 @@ def main():
             "Transport": str(transport_id),
             "uoid": str(uoid),
         }
-        for key, value in identity_values.items():
-            kwrite("emailidentities", identity_group, key, value)
+        if not (args.resume_admin_partial and offset == 0):
+            for key, value in identity_values.items():
+                kwrite("emailidentities", identity_group, key, value)
 
         transport_group = f"Transport {transport_id}"
         transport_values = {
@@ -242,21 +308,29 @@ def main():
             "precommand": "",
             "useProxy": "false",
         }
-        for key, value in transport_values.items():
-            kwrite("mailtransports", transport_group, key, value)
-        write_wallet_password(
-            wallet, wallet_handle, "mailtransports", str(transport_id), secrets[identity]
-        )
+        if not (args.resume_admin_partial and offset == 0):
+            for key, value in transport_values.items():
+                kwrite("mailtransports", transport_group, key, value)
+            write_wallet_password(
+                wallet, wallet_handle, "mailtransports", str(transport_id),
+                secrets[identity]
+            )
 
-        resource_id = str(manager.createAgentInstance("akonadi_imap_resource"))
-        if not resource_id.startswith("akonadi_imap_resource_"):
-            fail("unexpected Akonadi resource identifier")
+        if args.resume_admin_partial and offset == 0:
+            resource_id = empty_imap_resources[0]
+        else:
+            resource_id = str(manager.createAgentInstance("akonadi_imap_resource"))
+            if not resource_id.startswith("akonadi_imap_resource_"):
+                fail("unexpected Akonadi resource identifier")
         created_resources.append(resource_id)
         manager.setAgentInstanceName(resource_id, f"IMAP ({identity})")
         service = f"org.freedesktop.Akonadi.Resource.{resource_id}"
         wait_service(bus, service)
         settings_obj = bus.get_object(service, "/Settings")
         settings = dbus.Interface(settings_obj, "org.kde.Akonadi.Imap.Settings")
+        wallet_settings = dbus.Interface(
+            settings_obj, "org.kde.Akonadi.Imap.Wallet"
+        )
         settings.setImapServer(MAIL_HOST)
         settings.setImapPort(dbus.Int32(993))
         settings.setUserName(identity)
@@ -269,7 +343,7 @@ def main():
         settings.setUseDefaultIdentity(False)
         settings.setAccountIdentity(dbus.Int32(uoid))
         settings.setSieveSupport(False)
-        settings.setPassword(secrets[identity])
+        wallet_settings.setPassword(secrets[identity])
         settings.save()
         time.sleep(2)
         manager.restartAgentInstance(resource_id)
