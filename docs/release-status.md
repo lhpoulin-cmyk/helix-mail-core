@@ -8,16 +8,26 @@ BETA_ELIGIBLE=false
 
 ## 1.1.1 alpha-to-beta mail demonstration gate
 
-Version 1.1.1 remains alpha until each non-deferred physical endpoint proves
-trusted authenticated submission, local delivery, receipt of a reply, and
-trusted mailbox retrieval using only its own `home.arpa` identity and
-credential:
+Version 1.1.1 remains alpha until each required participant proves trusted
+authenticated submission, local delivery, receipt of a reply, and trusted
+mailbox retrieval using only its own `home.arpa` identity and credential.
+
+Required physical endpoints:
 
 - `hv-lore`
 - `hv-katra`
 - `hv-matrix`
 - `ws-matriarch`
 - `ws-hadrian`
+
+Required administrative mailboxes, tested independently from an approved
+client endpoint:
+
+- `admin@home.arpa`
+- `cluster-admin@home.arpa`
+
+`cluster-admin@home.arpa` is the canonical existing identity. No
+`cluster_admin@home.arpa` identity is permitted.
 
 Every test must also prove incorrect-credential rejection, external-relay
 rejection, and absence of plaintext password authentication. Tests originate
@@ -27,7 +37,9 @@ on the named endpoint and use non-secret correlation identifiers.
 bundles, dual custody, and operator-deferred status. They do not block this
 specific gate and are not classified as verified.
 
-All five required hosts must be `SEND/RECEIVE VERIFIED` before setting
-`BETA_ELIGIBLE=true`. Satisfying this blocker does not declare promotion or
-production readiness. The two-week soak, Fastmail bridge, appliance export,
-and production placement remain independent gates.
+All five required hosts and both administrative mailboxes must be
+`SEND/RECEIVE VERIFIED` before setting `BETA_ELIGIBLE=true`. Satisfying this
+blocker does not change the release label to beta and does not declare
+promotion or production readiness. The operator must separately authorize the
+actual alpha-to-beta promotion. The two-week soak, Fastmail bridge, appliance
+export, and production placement remain independent gates.
