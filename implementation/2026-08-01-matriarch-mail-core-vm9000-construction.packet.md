@@ -22,6 +22,10 @@ GUEST_GATEWAY=192.168.100.1
 GUEST_DNS_SERVERS=192.168.10.251,192.168.10.252
 GUEST_MTU=1500
 GUEST_NETWORK_MODEL=single-nic
+
+GUEST_INSTALL_IMAGE=debian-13.6.0-amd64-netinst.iso
+GUEST_INSTALL_IMAGE_SHA512=ce0eeee7b51fdcdbed1e5116668c1fee27e528767bdf488e5f115a67b225e5dfd0afca1d456aaa9408ceb6b8527521ff7b6b5d62fdbe6f8c5faaf8df56a96292
+GUEST_INSTALL_IMAGE_REFERENCE=/var/lib/libvirt/boot/debian-13.6.0-amd64-netinst.iso
 ```
 
 The domain uses 2 vCPU, 4096 MiB RAM, the existing sparse 32 GiB system disk,
@@ -53,6 +57,18 @@ Any conflict, missing result, unavailable read-only access, active DHCP scope
 without an exclusion, or insufficient free capacity stops activation. A failed
 preflight must not select another address.
 
+7. Require the immutable installer input before any definition:
+
+   ```bash
+   install_image=/var/lib/libvirt/boot/debian-13.6.0-amd64-netinst.iso
+   expected_sha512=ce0eeee7b51fdcdbed1e5116668c1fee27e528767bdf488e5f115a67b225e5dfd0afca1d456aaa9408ceb6b8527521ff7b6b5d62fdbe6f8c5faaf8df56a96292
+   test -f "$install_image"
+   test "$(sha512sum "$install_image" | awk '{print $1}')" = "$expected_sha512"
+   ```
+
+   The path or hash mismatch is a hard stop; do not download, substitute, or
+   update the image during VM construction.
+
 ## Rendered guest definition
 
 The following fixed domain attributes may be used only after the preflight and
@@ -66,14 +82,57 @@ system disk:    /var/lib/libvirt/mail-core/mail-core-9000-system.qcow2 (qcow2, v
 mail-data disk: /var/lib/libvirt/mail-core/mail-core-9000-data.qcow2 (qcow2, virtio)
 network:        bridge br-lab10, one virtio NIC
 guest network:  192.168.100.199/24 via 192.168.100.1; DNS .251,.252; MTU 1500
+installer ISO:  /var/lib/libvirt/boot/debian-13.6.0-amd64-netinst.iso (SHA-512 pinned above)
 ```
 
-`INSTALL_MEDIA_REFERENCE` remains unresolved. The packet deliberately does not
-invent a guest operating-system image, installer ISO, OS variant, checksum, or
-install method. Once an approved immutable installation source is supplied,
-the future execution packet must render the exact `virt-install` or equivalent
-domain-definition command and stop before guest start unless that same
-authorization explicitly permits it.
+Fedora's installed libosinfo database identifies `debian13` as Debian 13. The
+following is the complete future construction command. It is rendered only;
+running it defines and starts the domain and therefore requires a separate
+explicit VM-construction authorization after every preflight above passes.
+
+```bash
+set -euo pipefail
+install_image=/var/lib/libvirt/boot/debian-13.6.0-amd64-netinst.iso
+expected_sha512=ce0eeee7b51fdcdbed1e5116668c1fee27e528767bdf488e5f115a67b225e5dfd0afca1d456aaa9408ceb6b8527521ff7b6b5d62fdbe6f8c5faaf8df56a96292
+system_disk=/var/lib/libvirt/mail-core/mail-core-9000-system.qcow2
+data_disk=/var/lib/libvirt/mail-core/mail-core-9000-data.qcow2
+
+test "$(hostnamectl --static)" = ws-matriarch
+test -f "$install_image"
+test "$(sha512sum "$install_image" | awk '{print $1}')" = "$expected_sha512"
+test -f "$system_disk"
+test -f "$data_disk"
+if virsh --readonly --connect qemu:///system dominfo mail-core-9000 >/dev/null 2>&1; then
+  echo 'mail-core-9000 already exists; refusing to reuse a domain definition' >&2
+  exit 1
+fi
+findmnt --target /var/lib/libvirt/mail-core >/dev/null
+virsh --readonly --connect qemu:///system pool-info mail-core-construction >/dev/null
+ip link show br-lab10 | grep -F 'mtu 9000'
+
+# Run and pass the separate final 192.168.100.199 collision-preflight packet
+# before this command. It is deliberately not replaced by ARP absence alone.
+
+sudo -n virt-install \
+  --connect qemu:///system \
+  --name mail-core-9000 \
+  --memory 4096 \
+  --vcpus 2 \
+  --cpu host-model \
+  --os-variant debian13 \
+  --disk path="$system_disk",format=qcow2,bus=virtio \
+  --disk path="$data_disk",format=qcow2,bus=virtio \
+  --network bridge=br-lab10,model=virtio \
+  --cdrom "$install_image" \
+  --graphics none \
+  --console pty,target.type=serial \
+  --noautoconsole
+```
+
+The command makes no libvirt NAT network, storage pool, disk, bridge, or
+additional NIC. It uses the host's normal libvirt firmware default rather than
+inventing an OVMF path. Guest static addressing and MTU are installed inside
+Debian after boot; they are not host-side `virt-install` options.
 
 ## TLS and acceptance boundaries
 

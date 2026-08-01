@@ -8,7 +8,7 @@ Target: `ws-matriarch` local libvirt boot-image directory
 ```text
 GUEST_INSTALL_IMAGE=debian-13.6.0-amd64-netinst.iso
 GUEST_INSTALL_IMAGE_REFERENCE=/var/lib/libvirt/boot/debian-13.6.0-amd64-netinst.iso
-GUEST_INSTALL_IMAGE_SHA512=record only after successful signed-manifest verification
+GUEST_INSTALL_IMAGE_SHA512=ce0eeee7b51fdcdbed1e5116668c1fee27e528767bdf488e5f115a67b225e5dfd0afca1d456aaa9408ceb6b8527521ff7b6b5d62fdbe6f8c5faaf8df56a96292
 ```
 
 The target is the existing local libvirt boot-image directory. The previously
@@ -130,3 +130,25 @@ Do not install the guest, define/start VM 9000, modify networking/DNS/TLS,
 or touch the existing mail-core storage volumes. A later construction packet
 must require this exact local path and full SHA-512 immediately before domain
 definition.
+
+## Recorded result
+
+Status: verified and copied; no VM definition or guest installation occurred.
+
+| Field | Recorded value |
+| --- | --- |
+| Filename | `debian-13.6.0-amd64-netinst.iso` |
+| Debian release | Debian 13.6 (trixie) |
+| Architecture | amd64 |
+| Byte size | `791674880` |
+| SHA-256 | `65273beed27b2df543b68b65630ba525cfbad8df2b12035732b2dff87d6664e7` |
+| SHA-512 | `ce0eeee7b51fdcdbed1e5116668c1fee27e528767bdf488e5f115a67b225e5dfd0afca1d456aaa9408ceb6b8527521ff7b6b5d62fdbe6f8c5faaf8df56a96292` |
+| Acquisition timestamp | `2026-08-01T00:47:27Z` |
+| Source classification | Official Debian CD image service over HTTPS (`cdimage.debian.org`) |
+| Signature verification | PASS: both `SHA256SUMS.sign` and `SHA512SUMS.sign` verified by `gpgv` using Debian's documented CD signing key `DF9B9C49EAA9298432589D76DA87E80D6294BE9B` |
+| Immutable local reference | `/var/lib/libvirt/boot/debian-13.6.0-amd64-netinst.iso` |
+| Local protection | mode `0444`; SELinux context verified as `virt_content_t` |
+
+An independent local rehash after the copy matched both recorded hashes. The
+installed artifact is the immutable input for the future VM construction
+command; a mismatch or missing path is a hard stop.
