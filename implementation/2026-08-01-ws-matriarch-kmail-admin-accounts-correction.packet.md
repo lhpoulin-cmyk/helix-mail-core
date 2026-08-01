@@ -13,7 +13,8 @@ The interrupted run left one exact partial account:
 
 - the `admin@home.arpa` KMail identity;
 - its reviewed SMTP transport and KWallet entry;
-- one empty, unsaved IMAP resource;
+- one admin IMAP resource whose non-secret setters persisted, but whose password
+  call and explicit save did not complete;
 - no `cluster-admin@home.arpa` identity, transport, or resource.
 
 The system-wide Helix Lab root CA installation succeeded and both mail TLS
@@ -30,7 +31,8 @@ scripts/configure-kmail-local-accounts.py --apply --resume-admin-partial
 
 The resume mode must fail closed unless it finds exactly the partial state
 above. It verifies the existing admin identity and transport field by field,
-requires exactly one empty IMAP resource, and refuses any existing
+requires exactly one IMAP resource matching all reviewed admin settings, and
+refuses any existing
 `cluster-admin@home.arpa` state.
 
 It then:

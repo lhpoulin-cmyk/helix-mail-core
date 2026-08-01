@@ -206,7 +206,7 @@ def main():
     bus = dbus.SessionBus()
     manager_obj = bus.get_object("org.freedesktop.Akonadi.Control", "/AgentManager")
     manager = dbus.Interface(manager_obj, "org.freedesktop.Akonadi.AgentManager")
-    empty_imap_resources = []
+    resumable_admin_resources = []
     for instance in manager.agentInstances():
         name = str(manager.agentInstanceName(instance))
         if not args.resume_admin_partial and any(
@@ -218,10 +218,19 @@ def main():
             wait_service(bus, service)
             obj = bus.get_object(service, "/Settings")
             candidate = dbus.Interface(obj, "org.kde.Akonadi.Imap.Settings")
-            if not str(candidate.imapServer()) and not str(candidate.userName()):
-                empty_imap_resources.append(str(instance))
-    if args.resume_admin_partial and len(empty_imap_resources) != 1:
-        fail("expected exactly one empty IMAP resource from the interrupted run")
+            if (
+                str(candidate.imapServer()) == MAIL_HOST
+                and int(candidate.imapPort()) == 993
+                and str(candidate.userName()) == "admin@home.arpa"
+                and str(candidate.safety()) == "SSL"
+                and int(candidate.authentication()) == 1
+                and int(candidate.accountIdentity()) == admin_uoid
+                and not bool(candidate.useDefaultIdentity())
+                and not bool(candidate.sieveSupport())
+            ):
+                resumable_admin_resources.append(str(instance))
+    if args.resume_admin_partial and len(resumable_admin_resources) != 1:
+        fail("expected exactly one reviewed partial admin IMAP resource")
 
     STATE.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(STATE, 0o700)
@@ -317,7 +326,7 @@ def main():
             )
 
         if args.resume_admin_partial and offset == 0:
-            resource_id = empty_imap_resources[0]
+            resource_id = resumable_admin_resources[0]
         else:
             resource_id = str(manager.createAgentInstance("akonadi_imap_resource"))
             if not resource_id.startswith("akonadi_imap_resource_"):
