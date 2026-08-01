@@ -58,7 +58,9 @@ key, recovery credential, guest-login password, Fastmail secret, or another
 identity's credential.
 
 Account creation, credential rotation, aliases, and forwarding are bounded
-administrative changes. An email requesting one is still just an email.
+administrative changes. An authenticated message through the approved
+Fastmail-to-control-mailbox path can state the operator's authoritative intent,
+but it cannot waive the packet, review, or execution controls for that change.
 
 ## Local packet transcription
 
@@ -75,7 +77,9 @@ The mailbox name identifies the destination. For example,
 roots, custody paths, encryption recipients, and service ownership remain
 endpoint discovery gates rather than guessed configuration.
 
-Workspace transcriptions carry `AUTHORITY=NONE`. They may describe proposed
-work, but receipt does not authorize execution. The bounded design and its
-activation gates are recorded in
+Workspace transcriptions under that historical broad-mailbox proposal carry
+`AUTHORITY=NONE`. The later operator-direction policy is narrower and applies
+only to the approved Fastmail sender and two designated control mailboxes; it
+does not retroactively grant authority to ordinary transcriptions. The bounded
+design and its activation gates are recorded in
 [`../implementation/2026-08-01-local-mail-to-workspace-packet-transcription.packet.md`](../implementation/2026-08-01-local-mail-to-workspace-packet-transcription.packet.md).

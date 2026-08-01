@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Clarified the Fastmail boundary as two separate functions: an approved but
+  not-yet-deployed inbound operator-direction contract and the already accepted
+  outbound best-effort visibility bridge. This is a current policy correction;
+  historical bridge evidence remains unchanged.
 - Activated the recipient-specific Fastmail bridge as a best-effort external
   copy path. Normal Admin and Cluster Admin copies passed authenticated TLS
   delivery, while restart-safe or exactly-once outbound queueing remains an

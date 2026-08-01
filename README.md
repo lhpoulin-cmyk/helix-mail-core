@@ -81,6 +81,14 @@ of the two administrative mailboxes to `admin@poulin-arpa.com` and
 `cluster_admin@poulin-arpa.com`. Local correspondents continue recognizing and
 reaching one another when Fastmail or the Internet disappears.
 
+There is also a separate inbound authority contract. Mail authenticated as
+`louis@poulin-arpa.com` and delivered to one of the two designated local
+control mailboxes may carry authoritative operator direction to a local coder.
+That establishes who asked for what; it does not let an email hop the fence
+around implementation packets or safety review. The contract is documented,
+but its Fastmail-to-local transport and intake enforcement are not deployed.
+The outbound convenience copies do not turn into commands on the trip home.
+
 The bridge is not a durable outbound queue. An external copy may be lost if
 Stalwart stops while that copy is in an active delivery attempt. Local mail is
 unaffected. This is less romantic than “exactly once,” but considerably more

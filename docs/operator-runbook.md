@@ -59,6 +59,20 @@ belonging to the client under test. Verify:
 Do not use a real external recipient. Do not copy one endpoint's credential to
 another endpoint to make a test convenient.
 
+## Operator-direction intake
+
+The approved inbound authority contract names `louis@poulin-arpa.com` as the
+sender and `admin@home.arpa` plus `cluster-admin@home.arpa` as the only control
+recipients. It is not yet a deployed operating path. Until a bounded packet
+installs and verifies the transport and intake controls, do not treat a message
+as machine-ingested operator direction merely because it appears plausible.
+
+When implemented, intake must verify authenticated sender evidence and the
+canonical envelope recipient, preserve the received message, record the intake
+decision, and stop on ambiguity, identity mismatch, excessive scope, or a
+missing required implementation packet. Outbound Fastmail copies and replies
+are not shortcuts back into this path.
+
 ## Administrative KMail client
 
 `ws-matriarch` has separate KMail identities and transports for
@@ -112,5 +126,6 @@ of files a restore test.
 Do not broaden Fastmail, enable port 25, public administration, public JMAP, POP3,
 ManageSieve, ACME, public DNS, PTR publication, VM autostart, or external
 delivery through routine operation. Each crosses a separately reviewed gate.
-The Fastmail bridge is limited to the two reviewed recipient mappings and is a
-best-effort convenience path. It is not authoritative mail storage.
+The outbound Fastmail bridge is limited to the two reviewed recipient mappings
+and is a best-effort convenience path. It is neither authoritative mail
+storage nor an operator-direction channel.

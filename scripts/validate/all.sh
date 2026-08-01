@@ -13,9 +13,12 @@ done
 if rg -n --hidden --glob '!.git/**' --glob '!inventory/example/**' --glob '!**/*.md' '(?i)(password[[:space:]]*[:=][[:space:]]*[^" ]{8,}|api[_-]?key[[:space:]]*[:=]|BEGIN (RSA |EC )?PRIVATE KEY)' "$root"; then
   bad "possible tracked secret"
 else pass "no obvious tracked secret"; fi
-if jq -e '.fastmail.enabled == true and .fastmail.classification == "best-effort-external-copy" and .fastmail.authoritative == false and .fastmail.restart_safe_active_delivery == false and .recipient_policy.external_recipients == "reject" and .recipient_policy.unauthenticated_submission == "reject" and .recipient_policy.domain_allow_relaying == false and .listeners.smtp_port_25.enabled == false' "$root/config/stalwart/policy-contract.json" >/dev/null; then
+if jq -e '.fastmail.enabled == true and .fastmail.direction == "home-arpa-to-fastmail" and .fastmail.classification == "best-effort-external-copy" and .fastmail.authoritative == false and .fastmail.restart_safe_active_delivery == false and .operator_direction.direction == "fastmail-to-home-arpa" and .operator_direction.implementation_status == "policy-approved-transport-and-intake-not-deployed" and .operator_direction.approved_sender == "louis@poulin-arpa.com" and .operator_direction.designated_control_recipients == ["admin@home.arpa", "cluster-admin@home.arpa"] and .operator_direction.authority == "authoritative-operator-direction-when-policy-validates" and .operator_direction.fail_closed == true and .recipient_policy.external_recipients == "reject" and .recipient_policy.unauthenticated_submission == "reject" and .recipient_policy.domain_allow_relaying == false and .listeners.smtp_port_25.enabled == false' "$root/config/stalwart/policy-contract.json" >/dev/null; then
   pass "fail-closed relay and submission policy"
 else bad "fail-closed relay and submission policy"; fi
+if grep -q 'Fastmail -> `home.arpa`' "$root/docs/fastmail-boundary.md" && grep -q '`home.arpa` -> Fastmail' "$root/docs/fastmail-boundary.md" && grep -q 'transport and coder-intake enforcement are not yet deployed' "$root/docs/fastmail-boundary.md"; then
+  pass "Fastmail directions and authority remain distinct"
+else bad "Fastmail directions and authority remain distinct"; fi
 fastmail_plan="$root/config/stalwart/fastmail-store-forward.plan.ndjson.template"
 if jq -se '
   length == 4 and

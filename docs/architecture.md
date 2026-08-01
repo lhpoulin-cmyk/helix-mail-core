@@ -16,6 +16,14 @@ approved internal client <- IMAPS/993 -----------------------+
                                                             +-> best-effort Fastmail copy
 ```
 
+The outward arrow is not the whole Fastmail story. A separate approved policy
+allows authenticated direction from `louis@poulin-arpa.com` into the exact
+control mailboxes `admin@home.arpa` and `cluster-admin@home.arpa`. When its
+future transport and intake enforcement validate sender, recipient, and scope,
+that local message can record authoritative operator intent for a coder. It
+still cannot bypass the repository's packet and safety gates. The inbound path
+is policy-defined but not deployed; public SMTP remains disabled.
+
 The durable identity is `mail.home.arpa`; Matriarch is temporary construction
 and soak placement. No configuration may make the host name part of the mail
 identity or require Matriarch for a later restore.
@@ -89,9 +97,11 @@ administrator's envelope address.
 
 Stalwart's domain relaying is false. Public SMTP port 25, public
 administration, POP3, ManageSieve, public JMAP, and arbitrary external
-recipients are disabled. One exact-recipient bridge copies Admin and Cluster
-Admin mail to their corresponding Fastmail aliases. It is best effort and does
-not change which mailbox is authoritative.
+recipients are disabled. One exact-recipient outbound bridge copies Admin and
+Cluster Admin mail to their corresponding Fastmail aliases. It is best effort
+and does not change which mailbox is authoritative. It is separate from the
+inbound operator-direction contract and cannot confer authority by reply or
+inference.
 
 ## Recovery design
 

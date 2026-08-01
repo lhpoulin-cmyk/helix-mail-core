@@ -25,10 +25,18 @@ filesystem. The service must fail closed when that mount is absent. Runtime
 secrets, private keys, mail content, decrypted bundles, and raw operational
 evidence do not belong in this repository.
 
-Email is communication, not authority. No message body may execute a command,
-approve a deployment, rotate a credential, delete data, or change access. A
-future parser may classify mail and propose work; another reviewed control
-surface must authorize it.
+Email has two authority classes here. A message from the approved Louis
+Fastmail identity to an exact allowlisted `home.arpa` control address may be an
+authoritative statement of operator intent once sender authentication and
+recipient policy validate. The received local message is evidence of that
+direction. Outbound Fastmail copies, ordinary local mail, replies, and
+notifications carry no such authority.
+
+Even authoritative direction does not execute itself. A message body cannot
+bypass scope, packet, review, secret, destructive-action, or deployment gates.
+Unverified identity, the wrong recipient, ambiguity, excessive scope, or a
+missing required packet stops intake. The policy is documented; the inbound
+transport and coder-intake enforcement are not yet deployed.
 
 The remaining security claims are intentionally modest. The project has not
 proved an appliance export or isolated restore, durable external-copy queueing,

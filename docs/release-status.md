@@ -87,3 +87,12 @@ underscore belongs only to the latter external address. Normal delivery passed
 with SMTP 250. Copies are non-authoritative and may be lost if Stalwart restarts
 during an active outbound attempt; this accepted beta limitation does not alter
 the soak clock.
+
+A later governing clarification distinguishes that active outbound convenience
+bridge from an approved inbound operator-direction contract. Authenticated mail
+from `louis@poulin-arpa.com` to `admin@home.arpa` or
+`cluster-admin@home.arpa` may carry authoritative operator intent once an exact
+sender/recipient intake path is deployed and validated. No such inbound
+transport or coder intake is claimed in the current beta, and public SMTP
+remains disabled. Execution would still follow normal packet and safety
+doctrine.

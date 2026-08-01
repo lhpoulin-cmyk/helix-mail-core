@@ -38,10 +38,22 @@ evidence summaries, or chat transcripts.
 
 The service is authoritative only for `home.arpa`. Fastmail is an external
 transport boundary, not an identity source. Local delivery must survive an
-Internet outage. Receipt of email never authorizes command execution,
-infrastructure change, deployment approval, credential rotation, deletion, or
-access-control changes. A future parser may classify and propose; execution
-authority remains elsewhere.
+Internet outage.
+
+An authenticated message from the approved Louis Fastmail identity to an
+allowlisted `home.arpa` control mailbox may communicate authoritative operator
+direction. That authority establishes who directed what; it does not turn mail
+receipt into arbitrary execution. Sender authentication, the exact recipient,
+message scope, and required implementation packet must all validate. Ambiguous,
+misaddressed, unauthenticated, or out-of-scope instructions fail closed.
+Execution still follows this repository's observation, proposal, review,
+authorization, and verification controls, and the received message is
+preserved as evidence.
+
+Fastmail copies sent outward from the two administrative mailboxes are a
+separate best-effort visibility feature. They do not carry operator direction
+back into the lab and do not establish a general bidirectional command
+protocol.
 
 ## Placement, migration, and completion
 

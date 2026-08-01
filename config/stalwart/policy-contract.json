@@ -17,7 +17,21 @@
     "external_recipients": "reject",
     "domain_allow_relaying": false
   },
+  "operator_direction": {
+    "direction": "fastmail-to-home-arpa",
+    "implementation_status": "policy-approved-transport-and-intake-not-deployed",
+    "approved_sender": "louis@poulin-arpa.com",
+    "designated_control_recipients": [
+      "admin@home.arpa",
+      "cluster-admin@home.arpa"
+    ],
+    "authority": "authoritative-operator-direction-when-policy-validates",
+    "execution": "bounded-by-repository-packet-review-safety-and-scope-doctrine",
+    "preserve_received_message_as_evidence": true,
+    "fail_closed": true
+  },
   "fastmail": {
+    "direction": "home-arpa-to-fastmail",
     "enabled": true,
     "classification": "best-effort-external-copy",
     "authoritative": false,
