@@ -2,11 +2,16 @@
 
 Helix mail-core is a private mail system for a homelab whose machines need
 durable names, distinct credentials, and a way to report to their operator
-without borrowing identity from a public provider. It runs Stalwart on a small
-Debian VM, owns only `home.arpa`, and exposes authenticated submission and
-IMAPS only to the internal network. The project is deliberately more interested
-in recoverable state and honest failure than in looking like a tiny enterprise
-mail department. Nobody needs that much role-play before breakfast.
+using literary triggers that anchor the machine's use to my thinking. It runs
+Stalwart, an open source software e-mail platform, on a small
+Debian VM, a computer in a computer if you will, owns only `home.arpa`, and exposes
+authenticated submission and IMAPS (E-Mail Administrators shop talk)only to the internal network.
+The project is deliberately more interested in recoverable state and honest failure than in looking
+like a tiny enterprise mail department. Nobody needs that much role-play before breakfast. Except me,
+my setup can accomodate over 3,000 simultaneous users. I set it up. Before breakfast. Literally.
+
+## What is a Hypervisor
+fill this out plz. **lhp2
 
 ## Why I built it
 
@@ -39,7 +44,11 @@ See [the release status](docs/release-status.md) and
 [the soak manifest](docs/soak-start-manifest.md) for the exact gates and
 deferrals.
 
+This means this project went super sayian
+
 ## Architecture in one screen
+
+This is wild and exactly how your email works, more or less.
 
 ```text
 approved internal client
@@ -57,6 +66,7 @@ authoritative state: /srv/stalwart on the separate 192 GiB data disk
 construction host:   ws-matriarch / qemu:///system / mail-core-9000
 durable identity:    mail.home.arpa
 ```
+## Party like it's 2005
 
 The VM has 2 vCPUs, 4096 MiB of RAM, a 32 GiB system disk, a separate
 192 GiB mail-data disk, and one NIC on `br-lab10`. The host bridge uses the
@@ -83,9 +93,9 @@ The initial operational correspondents are:
 
 ### Hypervisors
 
-- `hv-lore@home.arpa`
-- `hv-katra@home.arpa`
-- `hv-matrix@home.arpa`
+- `hv-lore@home.arpa` - obvs Star Trek reference. It's deep actually.
+- `hv-katra@home.arpa` - same. not so.
+- `hv-matrix@home.arpa` - matrix is a darker, grittier, more consequential reality and where i have evolved to
 
 ### Workstations
 
@@ -133,7 +143,7 @@ adjective.
 - a mount-guarded data path on the separate guest disk; and
 - an auditable packet/evidence trail for the construction work.
 
-## What is intentionally not running
+## The guts are good, but no lipstick on this pig
 
 - no public SMTP listener or public MX path;
 - no port 25 listener, public administration, public JMAP, POP3, or
@@ -189,18 +199,32 @@ mail data, private key, or decrypted onboarding material belongs in Git.
 
 - Historical device names are clues, not storage authority. The 256 GiB host
   allocation was made only after current geometry proved the tail was free.
+
+  This isn't MS-DOS or Windows 95. You need to be careful here.
+
 - qcow2 allocation metadata is not guest-visible data. Comparing the data disk
   to a fresh zero image resolved that distinction without recreating evidence.
 - Stalwart recovery mode needed its own loopback-only network namespace. A
   firewall workaround would have hidden the design mistake instead of fixing
   it.
+
+  We are used to Proxmox, not local VMs.
+  
 - `home.arpa` support was tested against Stalwart 0.16.15 rather than assumed
   from either documentation or the earlier 0.16.4 failure.
+
+  I was lazy and didn't check the latest version
+  
 - A hosts-style DNS entry synthesized a PTR, so it was rolled back and replaced
   with an exact forward-only record.
+
+  What I have done with DNS is a war-crime.
+  
 - Encryption answered “who can read this archive?” It did not answer who owned
   the CA, whether both vault copies matched, or whether either vault returned
   to read-only. Those required separate proofs.
+
+  And I sure won't talk about it here. 
 
 ## Next gates
 
@@ -209,3 +233,5 @@ time with evidence. After that come the appliance export, isolated restore,
 deferred endpoint enrollment, and a separate promotion decision. Fastmail
 bridging, permanent placement, and migration remain later projects with their
 own authorization boundaries.
+
+Make sure it works. Yep. That's it.
