@@ -36,6 +36,10 @@ service state were not changed. The Stalwart packet was not started.
    explicitly prohibited credential rotation or changing the account model.
    Continuing solely through QEMU guest-agent root execution would not prove
    the retained operator access path and would leave no validated sudo login.
+   A subsequent secret-safe comparison of SHA-256 fingerprints (not the hash
+   values themselves) proved that the protected installer password-hash file
+   does not match the current `louis` shadow hash in the guest. No hash or
+   password was printed, copied into Git, or changed.
 2. The reviewed preflight command reads `/proc/mdstat`, but that pseudo-file is
    absent on this minimal guest. The command therefore exited nonzero after the
    disk-size, topology, signature, mount, and swap checks passed. A separately
