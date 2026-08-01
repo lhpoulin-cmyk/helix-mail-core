@@ -122,7 +122,7 @@ sudo -n virt-install \
   --os-variant debian13 \
   --disk path="$system_disk",format=qcow2,bus=virtio \
   --disk path="$data_disk",format=qcow2,bus=virtio \
-  --network bridge=br-lab10,model=virtio \
+  --network bridge=br-lab10,model=virtio,mtu.size=1500 \
   --cdrom "$install_image" \
   --graphics none \
   --console pty,target.type=serial \
@@ -130,8 +130,10 @@ sudo -n virt-install \
 ```
 
 The command makes no libvirt NAT network, storage pool, disk, bridge, or
-additional NIC. It uses the host's normal libvirt firmware default rather than
-inventing an OVMF path. Guest static addressing and MTU are installed inside
+additional NIC, and renders the guest-interface MTU as 1500 using the installed
+`virt-install` `mtu.size` option. It intentionally omits `--autostart`. It
+uses the host's normal libvirt firmware default rather than inventing an OVMF
+path. Guest static IP, gateway, and resolver configuration are installed inside
 Debian after boot; they are not host-side `virt-install` options.
 
 ## TLS and acceptance boundaries
