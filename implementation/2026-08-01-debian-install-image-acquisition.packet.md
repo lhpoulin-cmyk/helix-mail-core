@@ -34,12 +34,15 @@ documented CD-signing public key as the alternate trust path:
 ```text
 https://www.debian.org/CD/key-988021A964E6EA7D.txt
 required fingerprint: 10460DAD76165AD81FBC0CE9988021A964E6EA7D
+https://www.debian.org/CD/key-DA87E80D6294BE9B.txt
+required fingerprint: DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
 
-This is the Debian CD signing key documented by Debian's image-verification
+These are the Debian CD signing keys documented by Debian's image-verification
 guidance. No key is trusted merely because it arrived over HTTPS: its full
 fingerprint must match before `gpgv` verifies either detached manifest
-signature.
+signature. The current 13.6 manifest uses the second documented key; both are
+kept so a valid current signature does not depend on an unreviewed key swap.
 
 ## Exact bounded procedure
 
@@ -72,8 +75,10 @@ set -euo pipefail
 image=debian-13.6.0-amd64-netinst.iso
 base=https://cdimage.debian.org/debian-cd/current/amd64/iso-cd
 target=/var/lib/libvirt/boot/$image
-key_url=https://www.debian.org/CD/key-988021A964E6EA7D.txt
-key_fingerprint=10460DAD76165AD81FBC0CE9988021A964E6EA7D
+key_one_url=https://www.debian.org/CD/key-988021A964E6EA7D.txt
+key_one_fingerprint=10460DAD76165AD81FBC0CE9988021A964E6EA7D
+key_two_url=https://www.debian.org/CD/key-DA87E80D6294BE9B.txt
+key_two_fingerprint=DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 
 hostnamectl --static | grep -Fx ws-matriarch
 test -d /var/lib/libvirt/boot
@@ -88,11 +93,14 @@ curl --fail --location --proto '=https' --tlsv1.2 --remote-name "$base/SHA256SUM
 curl --fail --location --proto '=https' --tlsv1.2 --remote-name "$base/SHA256SUMS.sign"
 curl --fail --location --proto '=https' --tlsv1.2 --remote-name "$base/SHA512SUMS"
 curl --fail --location --proto '=https' --tlsv1.2 --remote-name "$base/SHA512SUMS.sign"
-curl --fail --location --proto '=https' --tlsv1.2 --output debian-cd-signing-key.asc "$key_url"
+curl --fail --location --proto '=https' --tlsv1.2 --output debian-cd-signing-key-one.asc "$key_one_url"
+curl --fail --location --proto '=https' --tlsv1.2 --output debian-cd-signing-key-two.asc "$key_two_url"
 
-actual_fingerprint=$(gpg --batch --show-keys --with-colons debian-cd-signing-key.asc | awk -F: '$1 == "fpr" { print $10; exit }')
-test "$actual_fingerprint" = "$key_fingerprint"
-gpg --batch --yes --dearmor --output debian-cd-signing-key.gpg debian-cd-signing-key.asc
+actual_one=$(gpg --batch --show-keys --with-colons debian-cd-signing-key-one.asc | awk -F: '$1 == "fpr" { print $10; exit }')
+actual_two=$(gpg --batch --show-keys --with-colons debian-cd-signing-key-two.asc | awk -F: '$1 == "fpr" { print $10; exit }')
+test "$actual_one" = "$key_one_fingerprint"
+test "$actual_two" = "$key_two_fingerprint"
+gpg --batch --no-default-keyring --keyring "$PWD/debian-cd-signing-key.gpg" --import debian-cd-signing-key-one.asc debian-cd-signing-key-two.asc
 gpgv --keyring "$PWD/debian-cd-signing-key.gpg" SHA256SUMS.sign SHA256SUMS
 gpgv --keyring "$PWD/debian-cd-signing-key.gpg" SHA512SUMS.sign SHA512SUMS
 grep -F "  $image" SHA256SUMS | sha256sum --check --strict --status -
