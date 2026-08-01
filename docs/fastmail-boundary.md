@@ -2,7 +2,7 @@
 
 Fastmail at `smtp.fastmail.com` is a disabled external transport boundary,
 not inbound mail, identity, or availability dependency. The bridge sender is
-`cluster_admin@fastmail.com`. The checked-in policy has `enabled: false`.
+`cluster_admin@poulin-arpa.com`. The checked-in policy has `enabled: false`.
 
 ## Accepted bridge design
 
@@ -14,7 +14,7 @@ administrative mailboxes:
 
 Local delivery remains authoritative. A successful local delivery is retained
 in its home.arpa mailbox, then an independently queued copy may cross the
-Fastmail boundary to exactly `cluster_admin@fastmail.com`. The bridge is not a
+Fastmail boundary to exactly `cluster_admin@poulin-arpa.com`. The bridge is not a
 move, mailbox migration, alias, or replacement for local delivery.
 
 This is the useful failure mode: when the Internet or Fastmail is unavailable,
@@ -37,7 +37,7 @@ fixture. Configure Stalwart relay authentication from the protected source.
 
 Fail closed: no general authenticated relay, no MX route for arbitrary domains,
 and no relay if the secret/policy is absent. The only external recipient is
-`cluster_admin@fastmail.com`, and the only eligible local sources are the two
+`cluster_admin@poulin-arpa.com`, and the only eligible local sources are the two
 administrative mailboxes. An approved outbound message is kept queued for retry
 or classified failed with an alert; it is never silently discarded. Routine
 logs, telemetry, repeating monitor events, and bulk mail are not eligible.

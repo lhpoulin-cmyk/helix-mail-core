@@ -13,7 +13,7 @@ mailboxes:
 - `cluster-admin@home.arpa`
 
 The original message stays in its local mailbox. One independently queued copy
-may go to `cluster_admin@fastmail.com`. Fastmail is transport and off-site
+may go to `cluster_admin@poulin-arpa.com`. Fastmail is transport and off-site
 visibility, not the authoritative mailbox, an inbound route, or an identity
 source.
 
@@ -55,13 +55,13 @@ The repository-rendered plan is
 1. `fastmail-admin-copy`, a trusted Sieve script that runs only for
    authenticated submission on local port 587. It matches an exact envelope
    recipient of `admin@home.arpa` or `cluster-admin@home.arpa` and performs one
-   `redirect :copy` to `cluster_admin@fastmail.com`.
+   `redirect :copy` to `cluster_admin@poulin-arpa.com`.
 2. `fastmail-admin-copy`, a Relay route to `smtp.fastmail.com:465` using SMTP,
    implicit TLS, normal certificate validation, username
-   `cluster_admin@fastmail.com`, and a secret read from
+   `cluster_admin@poulin-arpa.com`, and a secret read from
    `/etc/stalwart/secrets/fastmail-app-password`.
 3. An outbound route expression that selects that relay only when the queued
-   recipient is exactly `cluster_admin@fastmail.com`, selects `local` for local
+   recipient is exactly `cluster_admin@poulin-arpa.com`, selects `local` for local
    domains, and otherwise selects `local` as a deliberate fail-closed sink.
    The ordinary `mx` route remains defined but is not selected.
 4. The existing DATA-stage configuration with only its script expression
@@ -82,7 +82,7 @@ recipient, and an otherwise fail-closed route—make that boundary explicit.
 ## Secret handling
 
 Fastmail must supply a dedicated app password scoped to mail access for
-`cluster_admin@fastmail.com`. Collect it through the approved hidden local-entry
+`cluster_admin@poulin-arpa.com`. Collect it through the approved hidden local-entry
 workflow. Do not put it in argv, environment variables, shell history, stdout,
 chat, Git, evidence, or a plan file.
 
@@ -136,7 +136,7 @@ one uniquely identified, non-secret local test message from
 `admin@home.arpa` to `cluster-admin@home.arpa`. Require:
 
 - immediate local delivery and retrieval;
-- one queued copy addressed only to `cluster_admin@fastmail.com`;
+- one queued copy addressed only to `cluster_admin@poulin-arpa.com`;
 - successful authenticated TLS handoff to Fastmail;
 - receipt in the intended Fastmail mailbox;
 - no change to the local message's visible sender or content;

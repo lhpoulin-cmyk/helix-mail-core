@@ -81,7 +81,7 @@ and reaching one another.
 
 That bridge now has an accepted shape, though it is still disabled: retain mail
 locally, forward a queued copy of the two administrative mailboxes to
-`cluster_admin@fastmail.com`, and let an Internet failure remain an external
+`cluster_admin@poulin-arpa.com`, and let an Internet failure remain an external
 delivery problem instead of becoming a local-mail outage.
 
 This repository is both the deployment contract and the construction record.
