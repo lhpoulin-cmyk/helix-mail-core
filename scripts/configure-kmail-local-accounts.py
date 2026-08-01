@@ -359,8 +359,10 @@ def main():
         manager.restartAgentInstance(resource_id)
         manager.setAgentInstanceOnline(resource_id, True)
 
-    if not transport_cfg.sections():
-        kwrite("mailtransports", "General", "default-transport", transport_ids[0])
+    # The pre-existing local identity has no SMTP transport. Make the reviewed
+    # admin identity the usable compose default while retaining that identity.
+    kwrite("emailidentities", "General", "Default Identity", uoids[0])
+    kwrite("mailtransports", "General", "default-transport", transport_ids[0])
 
     os.chmod(identities_path, 0o600)
     os.chmod(transports_path, 0o600)

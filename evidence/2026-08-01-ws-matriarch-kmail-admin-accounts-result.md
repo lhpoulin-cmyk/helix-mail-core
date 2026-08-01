@@ -12,9 +12,11 @@ transports, and Akonadi IMAP resources for:
 - `admin@home.arpa`
 - `cluster-admin@home.arpa`
 
-The existing `louis` identity remains the default and was not altered. The two
-new identities bind to distinct transport identifiers and distinct protected
-credentials.
+The existing `louis` identity remains present and was not altered. It has no
+outgoing transport, so `admin@home.arpa` and its matching SMTP transport are the
+compose defaults. This prevents KMail from opening its unrelated account wizard
+when sending. The two new identities bind to distinct transport identifiers and
+distinct protected credentials.
 
 Both IMAP resources report Akonadi status `0` (`Ready`). Their durable labels
 are `IMAP (admin@home.arpa)` and `IMAP (cluster-admin@home.arpa)`.

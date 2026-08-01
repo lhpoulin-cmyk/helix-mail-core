@@ -45,6 +45,10 @@ It then:
    interfaces;
 5. restarts and synchronizes only the two reviewed resources.
 
+The prior local `louis` identity has no outgoing transport. Retain it, but make
+`admin@home.arpa` and its matching SMTP transport the compose defaults so KMail
+does not offer to create an unrelated outgoing account.
+
 The existing `louis` identity and unrelated Akonadi resources remain unchanged.
 
 ## Verification
