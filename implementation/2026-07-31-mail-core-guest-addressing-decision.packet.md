@@ -127,7 +127,7 @@ change the frozen bridge interfaces.
 The operator supplies the missing static-allocation authority. Freeze:
 
 ```text
-GUEST_IPV4=192.168.100.90
+GUEST_IPV4=192.168.100.2
 GUEST_PREFIX=24
 GUEST_GATEWAY=192.168.100.1
 GUEST_DNS_SERVERS=192.168.10.251,192.168.10.252
@@ -147,7 +147,7 @@ VLAN 80, use libvirt NAT or macvtap, or reopen the frozen bridge decision.
 ### Required immediate collision preflight
 
 Immediately before defining, starting, or attaching any guest that would use
-`192.168.100.90`, collect fresh, sanitized evidence that:
+`192.168.100.2`, collect fresh, sanitized evidence that:
 
 1. Netbrain has no interface address at that address.
 2. The address is outside/excluded from every active DHCP pool, or has an

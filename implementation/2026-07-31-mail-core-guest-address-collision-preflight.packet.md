@@ -1,7 +1,7 @@
 # Mail-core guest-address collision preflight packet
 
 **Status:** Deferred read-only pre-guest-activation gate  
-**Candidate:** `192.168.100.90/24`  
+**Candidate:** `192.168.100.2/24`
 **Prerequisite:** Operator Decision 4 accepted
 
 ## Purpose
@@ -13,7 +13,7 @@ libvirt, bridge, or VM mutation.
 ## Fixed values
 
 ```text
-GUEST_IPV4=192.168.100.90
+GUEST_IPV4=192.168.100.2
 GUEST_PREFIX=24
 GUEST_GATEWAY=192.168.100.1
 GUEST_DNS_SERVERS=192.168.10.251,192.168.10.252
