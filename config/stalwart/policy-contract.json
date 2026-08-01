@@ -21,6 +21,9 @@
     "enabled": false,
     "host": "smtp.fastmail.com",
     "auth_username": "louis@poulin-arpa.com",
-    "delivery_recipient": "cluster_admin@poulin-arpa.com"
+    "delivery_recipients": [
+      "admin@poulin-arpa.com",
+      "cluster_admin@poulin-arpa.com"
+    ]
   }
 }

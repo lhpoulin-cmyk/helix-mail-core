@@ -2,8 +2,9 @@
 
 Fastmail at `smtp.fastmail.com` is a disabled external transport boundary,
 not inbound mail, identity, or availability dependency. SMTP authenticates as
-`louis@poulin-arpa.com`; the only delivery recipient is the existing alias
-`cluster_admin@poulin-arpa.com`. The checked-in policy has `enabled: false`.
+`louis@poulin-arpa.com`; the only delivery recipients are the existing aliases
+`admin@poulin-arpa.com` and `cluster_admin@poulin-arpa.com`. The checked-in
+policy has `enabled: false`.
 
 ## Accepted bridge design
 
@@ -15,7 +16,8 @@ administrative mailboxes:
 
 Local delivery remains authoritative. A successful local delivery is retained
 in its home.arpa mailbox, then an independently queued copy may cross the
-Fastmail boundary to exactly `cluster_admin@poulin-arpa.com`. The bridge is not a
+Fastmail boundary to its corresponding alias: `admin@poulin-arpa.com` or
+`cluster_admin@poulin-arpa.com`. The bridge is not a
 move, mailbox migration, alias, or replacement for local delivery.
 
 This is the useful failure mode: when the Internet or Fastmail is unavailable,
@@ -39,9 +41,9 @@ Use a mail-core-specific app password for `louis@poulin-arpa.com`. Do not copy
 or reuse the shared hypervisor relay credential.
 
 Fail closed: no general authenticated relay, no MX route for arbitrary domains,
-and no relay if the secret/policy is absent. The only external recipient is
-`cluster_admin@poulin-arpa.com`, and the only eligible local sources are the two
-administrative mailboxes. An approved outbound message is kept queued for retry
+and no relay if the secret/policy is absent. The only external recipients are
+`admin@poulin-arpa.com` and `cluster_admin@poulin-arpa.com`, each paired to its
+corresponding local administrative mailbox. An approved outbound message is kept queued for retry
 or classified failed with an alert; it is never silently discarded. Routine
 logs, telemetry, repeating monitor events, and bulk mail are not eligible.
 Disable immediately by removing the policy route/secret and restarting only

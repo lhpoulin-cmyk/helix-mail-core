@@ -13,7 +13,8 @@ mailboxes:
 - `cluster-admin@home.arpa`
 
 The original message stays in its local mailbox. One independently queued copy
-may go to `cluster_admin@poulin-arpa.com`. Fastmail is transport and off-site
+may go to the corresponding alias: `admin@poulin-arpa.com` or
+`cluster_admin@poulin-arpa.com`. Fastmail is transport and off-site
 visibility, not the authoritative mailbox, an inbound route, or an identity
 source.
 
@@ -55,21 +56,22 @@ The repository-rendered plan is
 1. `fastmail-admin-copy`, a trusted Sieve script that runs only for
    authenticated submission on local port 587. It matches an exact envelope
    recipient of `admin@home.arpa` or `cluster-admin@home.arpa` and performs one
-   `redirect :copy` to `cluster_admin@poulin-arpa.com`.
+   `redirect :copy` to its corresponding `poulin-arpa.com` alias.
 2. `fastmail-admin-copy`, a Relay route to `smtp.fastmail.com:465` using SMTP,
    implicit TLS, normal certificate validation, SMTP username
    `louis@poulin-arpa.com`, exact delivery alias
    `cluster_admin@poulin-arpa.com`, and a secret read from
    `/etc/stalwart/secrets/fastmail-app-password`.
 3. An outbound route expression that selects that relay only when the queued
-   recipient is exactly `cluster_admin@poulin-arpa.com`, selects `local` for local
+   recipient is exactly `admin@poulin-arpa.com` or
+   `cluster_admin@poulin-arpa.com`, selects `local` for local
    domains, and otherwise selects `local` as a deliberate fail-closed sink.
    The ordinary `mx` route remains defined but is not selected.
 4. The existing DATA-stage configuration with only its script expression
    changed for authenticated port-587 sessions.
 
-The script creates at most one external copy per accepted SMTP message, even
-when both administrative recipients appear in the envelope. The existing
+The script creates at most one external copy per matched administrative
+recipient, and therefore at most two when both appear in one envelope. The existing
 submission limit remains ten messages per SMTP session, so the bridge adds at
 most ten copies per accepted session. That is the initial volume cap; this is
 an administrative visibility path, not a bulk-mail system wearing a small hat.
@@ -139,7 +141,7 @@ one uniquely identified, non-secret local test message from
 `admin@home.arpa` to `cluster-admin@home.arpa`. Require:
 
 - immediate local delivery and retrieval;
-- one queued copy addressed only to `cluster_admin@poulin-arpa.com`;
+- one queued copy addressed only to the matching `poulin-arpa.com` alias;
 - successful authenticated TLS handoff to Fastmail;
 - receipt in the intended Fastmail mailbox;
 - no change to the local message's visible sender or content;
