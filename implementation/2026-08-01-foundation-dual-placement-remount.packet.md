@@ -44,6 +44,8 @@ ws-matriarch-mail-onboarding.tar.gz.age
 ws-alpha-mail-onboarding.tar.gz.age
 ws-hadrian-mail-onboarding.tar.gz.age
 ws-wowzerwin-mail-onboarding.tar.gz.age
+louis-mail-onboarding.tar.gz.age
+admin-mail-onboarding.tar.gz.age
 machine-mail-onboarding.manifest.json
 ```
 
@@ -73,7 +75,7 @@ fingerprinted UUID.
    with the committed fingerprints above without logging raw identifiers.
 3. Require the exact mapper, ext4 label, mountpoint, read-only option, adequate
    free space, distinct device number, and no active user process.
-4. Require all eight source files to be regular files with exact reviewed
+4. Require all ten source files to be regular files with exact reviewed
    names, restrictive modes, and a verified local manifest. Reject symlinks,
    devices, FIFOs, sockets, hard-link surprises, or extra files.
 5. If the reviewed target subdirectory is absent, create only that directory
@@ -89,7 +91,7 @@ fingerprinted UUID.
 9. Run `sudo mount -o remount,ro <exact-mountpoint>` even after a copy failure.
 10. Require `findmnt` to show `ro`; revalidate mapper, fingerprints, label,
     filesystem, mountpoint, and distinct device number.
-11. Re-hash all eight files after the read-only remount and require exact
+11. Re-hash all ten files after the read-only remount and require exact
     source matches.
 12. Record only filenames, hashes, the non-secret Foundation role, timestamps,
     and pass/fail status.
