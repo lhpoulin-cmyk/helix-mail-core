@@ -3,7 +3,7 @@
 ```text
 VERSION=1.1.1-alpha
 SOAK_STATUS=STARTED
-BETA_ELIGIBLE=false
+BETA_ELIGIBLE=true
 ```
 
 ## 1.1.1 alpha-to-beta mail demonstration gate
@@ -43,3 +43,16 @@ blocker does not change the release label to beta and does not declare
 promotion or production readiness. The operator must separately authorize the
 actual alpha-to-beta promotion. The two-week soak, Fastmail bridge, appliance
 export, and production placement remain independent gates.
+
+## Gate result
+
+All seven required participants are `SEND/RECEIVE VERIFIED` in
+`evidence/1.1.1-alpha-to-beta-mail-demonstration.md`.
+
+```text
+1.1.1 ALPHA-TO-BETA BLOCKER SATISFIED
+BETA_ELIGIBLE=true
+```
+
+The version remains `1.1.1-alpha`. Changing the release label to beta requires
+a separate operator decision.
