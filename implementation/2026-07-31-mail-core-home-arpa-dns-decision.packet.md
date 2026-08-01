@@ -58,7 +58,7 @@ preflight, VM action, or DNS mutation was performed.
 - Mail-core establishes the durable service identity as mail.home.arpa, but its
   target inventory explicitly records home.arpa DNS ownership/path as
   unresolved.
-- Decision 4 freezes the guest address as 192.168.100.2/24, its Netbrain
+- Decision 4 freezes the guest address as 192.168.100.199/24, its Netbrain
   gateway, and the two internal resolver addresses. Those values identify
   consumers of DNS, not the owner or publisher of home.arpa.
 - The committed Network Contract records an intended single reviewed
@@ -81,14 +81,14 @@ MAIL_HOME_ARPA_RECORD_STATUS=UNRESOLVED_MAIL_HOME_ARPA_RECORD_STATUS
 The eventual forward proposal is:
 
 ~~~text
-mail.home.arpa.  A  192.168.100.2
+mail.home.arpa.  A  192.168.100.199
 ~~~
 
 If a reverse zone for the Lab-10 subnet exists and its owner confirms the
 change path, the corresponding proposal is:
 
 ~~~text
-2.100.168.192.in-addr.arpa.  PTR  mail.home.arpa.
+199.100.168.192.in-addr.arpa.  PTR  mail.home.arpa.
 ~~~
 
 These are proposals only; neither is a DNS change request and neither proves
