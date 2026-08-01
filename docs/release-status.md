@@ -3,14 +3,14 @@
 ```text
 VERSION=1.1.1-alpha
 SOAK_STATUS=STARTED
-BETA_ELIGIBLE=true
+BETA_ELIGIBLE=false
 ```
 
-## 1.1.1 alpha-to-beta mail demonstration gate
+## 1.1.1 release-blocker mail policy
 
-Version 1.1.1 remains alpha until each required participant proves trusted
-authenticated submission, local delivery, receipt of a reply, and trusted
-mailbox retrieval using only its own `home.arpa` identity and credential.
+Version 1.1.1 remains alpha and is not beta-eligible until the restricted
+machine-inbound policy is deployed and demonstrated from every required
+participant.
 
 Required physical endpoints:
 
@@ -29,9 +29,18 @@ client endpoint:
 `cluster-admin@home.arpa` is the canonical existing identity. No
 `cluster_admin@home.arpa` identity is permitted.
 
-Every test must also prove incorrect-credential rejection, external-relay
-rejection, and absence of plaintext password authentication. Tests originate
-on the named endpoint and use non-secret correlation identifiers.
+`admin@home.arpa` and `cluster-admin@home.arpa` may deliver to any authorized
+local mailbox. Every `hv-*` and `ws-*` mailbox, including deferred identities,
+must accept mail only from those two authenticated administrative identities.
+Machine-to-administrator delivery remains allowed; machine-to-machine and
+other local-to-machine delivery must be rejected before delivery.
+
+Tests must prove each non-deferred machine can send to an administrator and
+receive/retrieve the administrator's reply. Both administrators must send to
+every required machine and exchange mail with each other. Required negative
+tests include `hv-lore -> hv-katra`, `ws-matriarch -> ws-hadrian`, and
+`test-sender` delivery to both an `hv-*` and `ws-*` mailbox. External relay and
+plaintext password transport remain prohibited.
 
 `ws-alpha` and `ws-wowzerwin` retain their distinct identities, credentials,
 bundles, dual custody, and operator-deferred status. They do not block this
@@ -44,14 +53,15 @@ promotion or production readiness. The operator must separately authorize the
 actual alpha-to-beta promotion. The two-week soak, Fastmail bridge, appliance
 export, and production placement remain independent gates.
 
-## Gate result
+## Current gate result
 
-All seven required participants are `SEND/RECEIVE VERIFIED` in
-`evidence/1.1.1-alpha-to-beta-mail-demonstration.md`.
+The earlier unrestricted local send/receive demonstration remains factual but
+does not satisfy this stricter replacement policy. The policy has not yet been
+deployed or demonstrated.
 
 ```text
-1.1.1 ALPHA-TO-BETA BLOCKER SATISFIED
-BETA_ELIGIBLE=true
+VERSION=1.1.1-alpha
+BETA_ELIGIBLE=false
 ```
 
 The version remains `1.1.1-alpha`. Changing the release label to beta requires
