@@ -14,13 +14,45 @@ project values recoverable state, clear ownership, and honest failure more than
 ceremony. Complexity is welcome when it solves a demonstrated problem; it does
 not get in merely because a larger mail system would have it.
 
-## A quick word about hypervisors
+## What I mean by “the lab”
 
-A hypervisor is the software layer that runs virtual machines: computers made
-out of allocated CPU, memory, disks, and network interfaces on another
-computer. In this lab, the `hv-*` systems are the hosts that provide that layer.
-The mail appliance is currently a VM on `ws-matriarch`, which is serving as a
-temporary construction host even though it is normally a workstation.
+The lab is a small private computing environment I operate at home. It includes
+physical workstations, three virtualization hosts, internal DNS, storage,
+networking, trust infrastructure, and the services that tie them together. It
+is where I can learn systems by building the whole thing rather than renting a
+finished answer one API call at a time.
+
+“Homelab” can make this sound like a pile of blinking equipment kept for sport.
+There is some blinking, certainly, but the useful part is the freedom to follow
+a problem across boundaries. Mail touches identity, certificates, DNS,
+networking, storage, operating systems, and recovery. In a lab, I can study all
+of those connections without pretending they belong to separate planets.
+
+The machines have names because names are easier to reason about than serial
+numbers, and because I enjoy living in a world with a little lore in it. The
+names do not replace inventory: underneath them, the repository still records
+which machine, address, interface, disk, and credential is actually involved.
+Personality is allowed. Ambiguity is not.
+
+## Virtual machines and hypervisors
+
+A virtual machine, or VM, is a computer implemented in software. It gets
+virtual CPUs, memory, disks, firmware, and network hardware, then runs an
+ordinary operating system that mostly behaves as though the hardware were its
+own. “A computer inside another computer” is close enough for conversation,
+provided nobody uses that sentence as a backup plan.
+
+A hypervisor is the software layer that creates and runs those VMs. In this
+lab, the `hv-*` systems are dedicated virtualization hosts. They divide real
+hardware among several isolated guests, connect those guests to the internal
+network, and provide the control surface for starting, stopping, inspecting,
+and migrating them.
+
+The mail appliance is a VM because its durable identity should not depend on
+one motherboard. It is currently running on `ws-matriarch`, which is serving as
+a temporary construction host even though it is normally a workstation. That
+is unusual placement, but deliberate: build and observe it here, prove that it
+can be recovered, then make permanent placement a separate decision.
 
 Virtualization makes the appliance movable, but not automatically portable.
 The VM still depends on known storage, networking, firmware, and state. This
@@ -114,6 +146,13 @@ DNS is forward-only: both internal resolvers answer
 exactly `DNS:mail.home.arpa` chains to the offline Helix Lab X.509 root through
 its issuing intermediate. The server key was generated inside the guest and did
 not join the CA custody packages on their travels.
+
+In less compressed language, DNS is how a client turns `mail.home.arpa` into
+the server's internal address. TLS is how the client checks that the server at
+that address can present a certificate issued by a lab authority it trusts.
+Neither proves that the server is well configured, but together they prevent a
+password from being handed to whichever machine happens to answer first. The
+details matter most precisely when they are least visible.
 
 ## Correspondents and mail policy
 
