@@ -340,6 +340,7 @@ def main():
         wallet_settings = dbus.Interface(
             settings_obj, "org.kde.Akonadi.Imap.Wallet"
         )
+        settings.setName(f"IMAP ({identity})")
         settings.setImapServer(MAIL_HOST)
         settings.setImapPort(dbus.Int32(993))
         settings.setUserName(identity)
