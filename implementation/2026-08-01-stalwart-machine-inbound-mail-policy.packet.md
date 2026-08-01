@@ -45,6 +45,24 @@ The script matches only `home.arpa` recipients whose local part begins `hv-` or
 canonical administrative addresses. The rejection is permanent `550 5.7.1`
 and occurs at RCPT before DATA.
 
+## Runtime identity correction
+
+The first activation established two runtime facts. Stalwart did not execute a
+new system script until the permanent service restarted with the object and
+selector present. Once loaded, `hv-lore -> hv-katra` was rejected, but Admin
+was also rejected because `env.authenticated_as` contains the canonical account
+name (`admin` or `cluster-admin`), not the submitted full address. The selector
+was returned to `false` after each failed gate.
+
+Apply the bounded upsert in
+`config/stalwart/machine-inbound-policy-auth-name-correction.plan.ndjson` to
+replace only that comparison with the two live canonical account names. This
+does not authorize an underscore variant or another domain: `home.arpa` is the
+sole local Domain, and the live Account inventory contains unique `admin` and
+`cluster-admin` objects. Restart with the selector disabled to compile the
+corrected script, select it, restart once with the selector present, and repeat
+the complete matrix. Preserve the rollback plan throughout.
+
 ## Immediate verification before demonstrations
 
 Using protected existing credentials and trusted TLS:
