@@ -100,11 +100,10 @@ actual_one=$(gpg --batch --show-keys --with-colons debian-cd-signing-key-one.asc
 actual_two=$(gpg --batch --show-keys --with-colons debian-cd-signing-key-two.asc | awk -F: '$1 == "fpr" { print $10; exit }')
 test "$actual_one" = "$key_one_fingerprint"
 test "$actual_two" = "$key_two_fingerprint"
-gnupg_home="$PWD/gnupg"
-mkdir -m 0700 "$gnupg_home"
-gpg --batch --homedir "$gnupg_home" --import debian-cd-signing-key-one.asc debian-cd-signing-key-two.asc
-gpgv --homedir "$gnupg_home" SHA256SUMS.sign SHA256SUMS
-gpgv --homedir "$gnupg_home" SHA512SUMS.sign SHA512SUMS
+gpg --batch --yes --dearmor --output debian-cd-signing-key-one.gpg debian-cd-signing-key-one.asc
+gpg --batch --yes --dearmor --output debian-cd-signing-key-two.gpg debian-cd-signing-key-two.asc
+gpgv --keyring "$PWD/debian-cd-signing-key-one.gpg" --keyring "$PWD/debian-cd-signing-key-two.gpg" SHA256SUMS.sign SHA256SUMS
+gpgv --keyring "$PWD/debian-cd-signing-key-one.gpg" --keyring "$PWD/debian-cd-signing-key-two.gpg" SHA512SUMS.sign SHA512SUMS
 grep -F "  $image" SHA256SUMS | sha256sum --check --strict --status -
 grep -F "  $image" SHA512SUMS | sha512sum --check --strict --status -
 
