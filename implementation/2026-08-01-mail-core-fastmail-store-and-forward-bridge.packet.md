@@ -57,7 +57,8 @@ The repository-rendered plan is
    recipient of `admin@home.arpa` or `cluster-admin@home.arpa` and performs one
    `redirect :copy` to `cluster_admin@poulin-arpa.com`.
 2. `fastmail-admin-copy`, a Relay route to `smtp.fastmail.com:465` using SMTP,
-   implicit TLS, normal certificate validation, username
+   implicit TLS, normal certificate validation, SMTP username
+   `louis@poulin-arpa.com`, exact delivery alias
    `cluster_admin@poulin-arpa.com`, and a secret read from
    `/etc/stalwart/secrets/fastmail-app-password`.
 3. An outbound route expression that selects that relay only when the queued
@@ -81,8 +82,10 @@ recipient, and an otherwise fail-closed route—make that boundary explicit.
 
 ## Secret handling
 
-Fastmail must supply a dedicated app password scoped to mail access for
-`cluster_admin@poulin-arpa.com`. Collect it through the approved hidden local-entry
+Fastmail must supply a new mail-core-specific app password scoped to mail
+access for SMTP login `louis@poulin-arpa.com`. The existing hypervisor fleet
+uses a shared mail-only credential, but this packet does not read, copy, or
+reuse it. Collect the new credential through the approved hidden local-entry
 workflow. Do not put it in argv, environment variables, shell history, stdout,
 chat, Git, evidence, or a plan file.
 

@@ -17,5 +17,10 @@
     "external_recipients": "reject",
     "domain_allow_relaying": false
   },
-  "fastmail": { "enabled": false, "host": "smtp.fastmail.com", "sender": "cluster_admin@poulin-arpa.com" }
+  "fastmail": {
+    "enabled": false,
+    "host": "smtp.fastmail.com",
+    "auth_username": "louis@poulin-arpa.com",
+    "delivery_recipient": "cluster_admin@poulin-arpa.com"
+  }
 }

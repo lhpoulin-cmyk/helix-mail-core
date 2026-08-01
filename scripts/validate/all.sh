@@ -19,7 +19,7 @@ else bad "fail-closed relay and submission policy"; fi
 fastmail_plan="$root/config/stalwart/fastmail-store-forward.plan.ndjson.template"
 if jq -se '
   length == 4 and
-  ([.[] | select(.object == "MtaRoute")][0].value["fastmail-admin-copy"] | .address == "smtp.fastmail.com" and .port == 465 and .implicitTls == true and .allowInvalidCerts == false and .authUsername == "cluster_admin@poulin-arpa.com" and .authSecret == {"@type":"File","filePath":"/etc/stalwart/secrets/fastmail-app-password"}) and
+  ([.[] | select(.object == "MtaRoute")][0].value["fastmail-admin-copy"] | .address == "smtp.fastmail.com" and .port == 465 and .implicitTls == true and .allowInvalidCerts == false and .authUsername == "louis@poulin-arpa.com" and .authSecret == {"@type":"File","filePath":"/etc/stalwart/secrets/fastmail-app-password"}) and
   ([.[] | select(.object == "MtaOutboundStrategy")][0].value.route | .else == "'"'local'"'" and .match["0"].if == "rcpt == '"'cluster_admin@poulin-arpa.com'"'" and .match["0"].then == "'"'fastmail-admin-copy'"'") and
   ([.[] | select(.object == "MtaStageData")][0].value.script.match["0"].if == "local_port == 587 && !is_empty(authenticated_as)") and
   ([.[] | select(.object == "SieveSystemScript")][0].value["fastmail-admin-copy"].contents | contains("redirect :copy \"cluster_admin@poulin-arpa.com\";") and contains("admin@home.arpa") and contains("cluster-admin@home.arpa"))

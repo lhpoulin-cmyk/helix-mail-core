@@ -63,3 +63,15 @@ Fastmail TLS endpoint on that date. It does not establish current reachability
 from `mail.home.arpa`, authenticate the dedicated Fastmail identity, prove
 transparent-copy sender acceptance, or justify importing Postfix configuration
 into Stalwart.
+
+The operator then clarified that Lore, Katra, and Matrix use the route daily.
+Current private doctrine and a secret-safe read-only inspection of Lore's
+root-only Postfix SASL map established the non-secret separation:
+
+- SMTP username: `louis@poulin-arpa.com`;
+- hypervisor sender: `cluster_node@poulin-arpa.com`;
+- operator-visible recipient alias: `cluster_admin@poulin-arpa.com`.
+
+No app-password value was read or emitted. Mail-core will use a distinct
+app password rather than enlarge the existing shared fleet credential's blast
+radius.

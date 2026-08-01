@@ -1,7 +1,8 @@
 # Fastmail boundary
 
 Fastmail at `smtp.fastmail.com` is a disabled external transport boundary,
-not inbound mail, identity, or availability dependency. The bridge sender is
+not inbound mail, identity, or availability dependency. SMTP authenticates as
+`louis@poulin-arpa.com`; the only delivery recipient is the existing alias
 `cluster_admin@poulin-arpa.com`. The checked-in policy has `enabled: false`.
 
 ## Accepted bridge design
@@ -34,6 +35,8 @@ verification recipient, rollback, and operator approval. An app password is
 entered directly into a protected runtime secret (file with restrictive mode or
 approved secret facility), never Git, cloud-init, logs, history, template, or
 fixture. Configure Stalwart relay authentication from the protected source.
+Use a mail-core-specific app password for `louis@poulin-arpa.com`. Do not copy
+or reuse the shared hypervisor relay credential.
 
 Fail closed: no general authenticated relay, no MX route for arbitrary domains,
 and no relay if the secret/policy is absent. The only external recipient is
