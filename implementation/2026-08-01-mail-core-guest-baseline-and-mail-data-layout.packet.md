@@ -89,7 +89,11 @@ test -z "$(wipefs -n /dev/vdb)"
 ! findmnt -rn -S /dev/vdb
 ! swapon --noheadings --show=NAME | grep -Fx /dev/vdb
 ! pvs --noheadings -o pv_name 2>/dev/null | grep -Fx /dev/vdb
-test -z "$(awk 'NR > 1 && $1 != "unused" {print}' /proc/mdstat)"
+if test -r /proc/mdstat; then
+  test -z "$(awk 'NR > 1 && $1 != "unused" {print}' /proc/mdstat)"
+else
+  test -z "$(lsblk -nrpo TYPE /dev/vdb | grep -Fx raid || true)"
+fi
 test "$(systemctl is-active ssh)" = active
 test "$(systemctl is-active qemu-guest-agent)" = active
 sshd -T | grep -Fxi 'permitrootlogin no'
@@ -190,7 +194,11 @@ test "$(stat -c '%U:%G %a' /srv/stalwart)" = 'root:root 755'
 test ! -e /srv/stalwart/data
 ! swapon --noheadings --show=NAME | grep -Fx /dev/vdb1
 ! pvs --noheadings -o pv_name 2>/dev/null | grep -Fx /dev/vdb1
-test -z "$(awk 'NR > 1 && $1 != "unused" {print}' /proc/mdstat)"
+if test -r /proc/mdstat; then
+  test -z "$(awk 'NR > 1 && $1 != "unused" {print}' /proc/mdstat)"
+else
+  test -z "$(lsblk -nrpo TYPE /dev/vdb1 | grep -Fx raid || true)"
+fi
 test "$(systemctl is-active ssh)" = active
 test "$(systemctl is-active qemu-guest-agent)" = active
 sshd -T | grep -Fxi 'permitrootlogin no'
