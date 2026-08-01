@@ -57,7 +57,7 @@ end sector:   402653150 (last usable GPT sector)
 type:         Linux filesystem (8300)
 name:         stalwart-data
 filesystem:   XFS
-label:        stalwart-data
+label:        stalwartdata
 mountpoint:   /srv/stalwart
 persistence:  newly observed filesystem UUID in /etc/fstab
 mount flags:  defaults,nodev,nosuid
@@ -100,7 +100,7 @@ sshd -T | grep -Fxi 'permitrootlogin no'
 sshd -T | grep -Fxi 'passwordauthentication yes'
 test ! -e /srv/stalwart
 ! grep -Eq '[[:space:]]/srv/stalwart[[:space:]]' /etc/fstab
-! blkid -L stalwart-data
+! blkid -L stalwartdata
 ```
 
 Also reconfirm from the host immediately before execution: the expected domain
@@ -145,7 +145,7 @@ test -z "$(blkid /dev/vdb || true)"
 test -z "$(wipefs -n /dev/vdb)"
 test ! -e /srv/stalwart
 ! grep -Eq '[[:space:]]/srv/stalwart[[:space:]]' /etc/fstab
-! blkid -L stalwart-data
+! blkid -L stalwartdata
 
 sgdisk --clear \
   --new=1:2048:402653150 \
@@ -161,11 +161,11 @@ sgdisk --verify /dev/vdb
 test -z "$(blkid /dev/vdb1 || true)"
 test -z "$(wipefs -n /dev/vdb1)"
 
-mkfs.xfs -L stalwart-data /dev/vdb1
+mkfs.xfs -L stalwartdata /dev/vdb1
 data_uuid=$(blkid -s UUID -o value /dev/vdb1)
 test -n "$data_uuid"
 test "$(blkid -s TYPE -o value /dev/vdb1)" = xfs
-test "$(blkid -s LABEL -o value /dev/vdb1)" = stalwart-data
+test "$(blkid -s LABEL -o value /dev/vdb1)" = stalwartdata
 
 test ! -e /root/fstab.mail-core-data-before
 cp -a /etc/fstab /root/fstab.mail-core-data-before
@@ -188,7 +188,7 @@ set -eu
 findmnt -rn -S /dev/vdb1 -T /srv/stalwart -o SOURCE,TARGET,FSTYPE,OPTIONS
 test "$(findmnt -bnro FSTYPE /srv/stalwart)" = xfs
 test "$(findmnt -bnro SOURCE /srv/stalwart)" = /dev/vdb1
-test "$(blkid -s LABEL -o value /dev/vdb1)" = stalwart-data
+test "$(blkid -s LABEL -o value /dev/vdb1)" = stalwartdata
 test "$(blkid -s UUID -o value /dev/vdb1)" = "$(findmnt -bnro UUID /srv/stalwart)"
 test "$(stat -c '%U:%G %a' /srv/stalwart)" = 'root:root 755'
 test ! -e /srv/stalwart/data

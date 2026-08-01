@@ -39,18 +39,18 @@ test -z "$(wipefs -n /dev/vdb1)"
 test ! -e /srv/stalwart
 test ! -e /root/fstab.mail-core-data-before
 ! grep -Eq '[[:space:]]/srv/stalwart[[:space:]]' /etc/fstab
-! blkid -L stalwart-data
+! blkid -L stalwartdata
 ```
 
 ## Exact completion
 
 ```sh
 set -eu
-mkfs.xfs -L stalwart-data /dev/vdb1
+mkfs.xfs -L stalwartdata /dev/vdb1
 data_uuid=$(blkid -s UUID -o value /dev/vdb1)
 test -n "$data_uuid"
 test "$(blkid -s TYPE -o value /dev/vdb1)" = xfs
-test "$(blkid -s LABEL -o value /dev/vdb1)" = stalwart-data
+test "$(blkid -s LABEL -o value /dev/vdb1)" = stalwartdata
 
 cp -a /etc/fstab /root/fstab.mail-core-data-before
 install -d -o root -g root -m 0755 /srv/stalwart
