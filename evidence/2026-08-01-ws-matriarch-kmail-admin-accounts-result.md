@@ -21,6 +21,18 @@ distinct protected credentials.
 Both IMAP resources report Akonadi status `0` (`Ready`). Their durable labels
 are `IMAP (admin@home.arpa)` and `IMAP (cluster-admin@home.arpa)`.
 
+Later interactive acceptance found two client details that protocol-only tests
+did not expose. Admin was made the default compose identity because the older
+local `louis` identity has no outgoing transport. Each administrative identity
+was then bound to its own server-side IMAP Drafts and Sent Items collections.
+KMail may renumber its `Identity #N` sections, so the bindings were verified by
+email address and stable identity uoid rather than by section number.
+
+Both administrative identities subsequently passed interactive draft save,
+authenticated send, receive, retrieval, and server-side Sent Items checks.
+Admin's test message was independently found in a recipient mailbox by its
+original Message-ID. Cluster Admin exchanged mail with Admin in both directions.
+
 ## Trust and protocol verification
 
 The public Helix Lab X.509 root was installed system-wide at:

@@ -58,6 +58,20 @@ belonging to the client under test. Verify:
 Do not use a real external recipient. Do not copy one endpoint's credential to
 another endpoint to make a test convenient.
 
+## Administrative KMail client
+
+`ws-matriarch` has separate KMail identities and transports for
+`admin@home.arpa` and `cluster-admin@home.arpa`. The Helix Lab root certificate
+is in the Fedora system trust store, credentials remain in KWallet, and Admin
+is the default compose identity. See
+[`kmail-admin-client.md`](kmail-admin-client.md) for the exact account and
+folder contract.
+
+For each identity, Drafts and Sent Items must name that identity's IMAP
+collections. A working IMAP login is not enough: without these bindings KMail
+quietly files drafts and sent copies under Local Folders, which is technically
+storage and operationally the wrong mailbox.
+
 ## Restart and reboot
 
 Before restarting Stalwart, prove `/srv/stalwart` is mounted and record queue
@@ -91,3 +105,5 @@ of files a restore test.
 Do not enable Fastmail, port 25, public administration, public JMAP, POP3,
 ManageSieve, ACME, public DNS, PTR publication, VM autostart, or external
 delivery through routine operation. Each crosses a separately reviewed gate.
+The accepted Fastmail store-and-forward design is documented, but it remains
+disabled until its bounded implementation packet is executed and accepted.

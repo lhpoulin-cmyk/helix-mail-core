@@ -79,6 +79,11 @@ an external boundary, not the source of local identity. If the bridge is later
 enabled and then disappears, local correspondents should continue recognizing
 and reaching one another.
 
+That bridge now has an accepted shape, though it is still disabled: retain mail
+locally, forward a queued copy of the two administrative mailboxes to
+`cluster_admin@fastmail.com`, and let an Internet failure remain an external
+delivery problem instead of becoming a local-mail outage.
+
 This repository is both the deployment contract and the construction record.
 The shorter documents explain the system as it exists now. The dated packets
 and evidence preserve the decisions, corrections, and failed gates that got it
@@ -210,6 +215,8 @@ the rest of the lab.
 
 - authenticated internal SMTP submission with STARTTLS on TCP 587;
 - authenticated IMAPS with implicit TLS on TCP 993;
+- KMail access for `admin@home.arpa` and `cluster-admin@home.arpa`, with
+  distinct KWallet credentials and server-side Drafts and Sent Items;
 - forward DNS from both internal resolvers;
 - trusted private-CA validation for `mail.home.arpa`;
 - local delivery and retrieval across service restart and guest reboot;
@@ -229,7 +236,9 @@ The guts are good. The lipstick can wait.
 - no public SMTP listener or public MX path;
 - no port 25 listener, public administration, public JMAP, POP3, or
   ManageSieve;
-- no Fastmail relay or real external-delivery test;
+- no active Fastmail relay or real external-delivery test; the accepted
+  store-and-forward design remains a reviewed proposal until its implementation
+  packet is authorized and verified;
 - no PTR publication;
 - no ACME or public certificate issuance;
 - no automated command execution from received mail;
@@ -280,6 +289,9 @@ restore exercise.
 - [Operator runbook](docs/operator-runbook.md) and
   [soak and promotion](docs/soak-testing-and-promotion.md) describe current
   operations and remaining gates.
+- [KMail administrative client](docs/kmail-admin-client.md) records the local
+  client configuration and the folder-binding trap that was surprisingly good
+  at impersonating a successful setup.
 - [`implementation/`](implementation/) contains exact reviewed proposals and
   execution boundaries. Their status lines matter; many are historical.
 - [`evidence/`](evidence/) contains sanitized factual results, including
@@ -339,10 +351,10 @@ much more useful once they measured the invariant I actually cared about.
 ## Next gates
 
 The immediate work is to finish and review the soak without confusing elapsed
-time with evidence. After that come the appliance export, isolated restore,
-deferred endpoint enrollment, and a separate promotion decision. Fastmail
-bridging, permanent placement, and migration remain later projects with their
-own authorization boundaries.
+time with evidence while building the separately gated Fastmail bridge. After
+that come the appliance export, isolated restore, deferred endpoint enrollment,
+and a separate promotion decision. Permanent placement and migration remain
+later projects with their own authorization boundaries.
 
 The intended destination is deliberately modest: a local mail appliance whose
 identity survives a host move, whose state can be restored without guesswork,

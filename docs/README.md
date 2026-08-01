@@ -34,6 +34,7 @@ remain readable, but precision wins any argument with personality.
 ## Operator runbooks
 
 - [`operator-runbook.md`](operator-runbook.md)
+- [`kmail-admin-client.md`](kmail-admin-client.md)
 - [`foreman-worker-loop.md`](foreman-worker-loop.md)
 - [`promotion-readiness-report.template.md`](promotion-readiness-report.template.md)
 

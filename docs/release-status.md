@@ -78,3 +78,10 @@ restart the soak, waive deferred-host requirements, enable public or external
 mail, or authorize appliance migration. `ws-alpha` and `ws-wowzerwin` remain
 deferred. Public SMTP and Fastmail remain disabled. Existing credentials and
 bundles are unchanged, and no `cluster_admin@home.arpa` identity exists.
+
+After beta promotion, the operator accepted a design for a future Fastmail
+bridge: retain local copies of mail delivered to `admin@home.arpa` and
+`cluster-admin@home.arpa`, then queue external copies to the distinct Fastmail
+address `cluster_admin@fastmail.com`. The underscore belongs only to that
+external address. This design decision does not change the current release
+state; the bridge is still disabled and untested.
