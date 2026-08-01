@@ -59,3 +59,23 @@ identity's credential.
 
 Account creation, credential rotation, aliases, and forwarding are bounded
 administrative changes. An email requesting one is still just an email.
+
+## Local packet transcription
+
+The operator has authorized implementation preparation for a local ingestion
+path for every authorized mailbox except `admin@home.arpa` and
+`cluster-admin@home.arpa`. An eligible message terminates at its local mailbox,
+is transcribed into Markdown under encrypted hidden custody at the destination,
+and is copied atomically into that destination's reviewed workspace inbox. It
+is not emailed onward.
+
+The mailbox name identifies the destination. For example,
+`hv-katra@home.arpa` maps only to the independently verified Katra workspace;
+`hv-katra@home.arpa.com` is not a local Helix identity. The exact workspace
+roots, custody paths, encryption recipients, and service ownership remain
+endpoint discovery gates rather than guessed configuration.
+
+Workspace transcriptions carry `AUTHORITY=NONE`. They may describe proposed
+work, but receipt does not authorize execution. The bounded design and its
+activation gates are recorded in
+[`../implementation/2026-08-01-local-mail-to-workspace-packet-transcription.packet.md`](../implementation/2026-08-01-local-mail-to-workspace-packet-transcription.packet.md).
