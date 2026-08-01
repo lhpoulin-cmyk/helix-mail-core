@@ -39,8 +39,8 @@ RestrictRealtime=yes
 RestrictNamespaces=yes
 SystemCallArchitectures=native
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-CapabilityBoundingSet=
-AmbientCapabilities=
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
 DevicePolicy=closed
 ReadWritePaths=/srv/stalwart/data /srv/stalwart/blobs /srv/stalwart/log /srv/stalwart/tmp
 
