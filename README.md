@@ -2,16 +2,27 @@
 
 Helix mail-core is a private mail system for a homelab whose machines need
 durable names, distinct credentials, and a way to report to their operator
-using literary triggers that anchor the machine's use to my thinking. It runs
-Stalwart, an open source software e-mail platform, on a small
-Debian VM, a computer in a computer if you will, owns only `home.arpa`, and exposes
-authenticated submission and IMAPS (E-Mail Administrators shop talk)only to the internal network.
-The project is deliberately more interested in recoverable state and honest failure than in looking
-like a tiny enterprise mail department. Nobody needs that much role-play before breakfast. Except me,
-my setup can accomodate over 3,000 simultaneous users. I set it up. Before breakfast. Literally.
+without borrowing identity from a public provider. It runs Stalwart on a small
+Debian VM, owns only `home.arpa`, and exposes authenticated submission and
+IMAPS only to the internal network. I built it to learn the whole path—from
+storage and routing to identity, TLS, delivery policy, and recovery—while
+keeping the result useful enough to earn a permanent place in the lab. The
+project values recoverable state, clear ownership, and honest failure more than
+ceremony. Complexity is welcome when it solves a demonstrated problem; it does
+not get in merely because a larger mail system would have it.
 
-## What is a Hypervisor
-fill this out plz. **lhp2
+## A quick word about hypervisors
+
+A hypervisor is the software layer that runs virtual machines: computers made
+out of allocated CPU, memory, disks, and network interfaces on another
+computer. In this lab, the `hv-*` systems are the hosts that provide that layer.
+The mail appliance is currently a VM on `ws-matriarch`, which is serving as a
+temporary construction host even though it is normally a workstation.
+
+Virtualization makes the appliance movable, but not automatically portable.
+The VM still depends on known storage, networking, firmware, and state. This
+repository records those dependencies so “it is just a VM” never becomes a
+substitute for a migration plan.
 
 ## Why I built it
 
@@ -21,10 +32,23 @@ wrong as itself; an administrator should be able to reply; one workstation
 should not be able to impersonate another. The lab should still know who it is
 when the Internet goes dark.
 
-That made local mail useful even before any external bridge existed. It also
-made the boundaries clearer: Fastmail can later carry selected messages across
-the Internet, but it is not the source of local identity and it is not required
-for local delivery.
+That idea made local mail useful before any external bridge existed. A machine
+can report a failed job, a storage warning, or a maintenance result using a
+durable identity that survives changes in scripts and placement. The operator
+can answer through the same local system. For me, that means talking to the lab
+through the same identities I use to understand it. None of that depends on a
+public DNS provider or a working Internet connection.
+
+It also clarified what an eventual Fastmail bridge should be: transport across
+an external boundary, not the source of local identity. If the bridge is later
+enabled and then disappears, local correspondents should continue recognizing
+and reaching one another.
+
+This repository is both the deployment contract and the construction record.
+The shorter documents explain the system as it exists now. The dated packets
+and evidence preserve the decisions, corrections, and failed gates that got it
+there. I keep both because a clean diagram explains the destination, while the
+record explains why I trust the road.
 
 ## Current release
 
@@ -39,16 +63,21 @@ the system-libvirt domain `mail-core-9000`. The soak began
 `2026-08-01T14:06:05-04:00`; its minimum review point is
 `2026-08-15T14:06:05-04:00`. Beta means the alpha mail-policy blocker passed.
 It does not mean production placement, migration, export, or restore readiness.
+The service is useful today, but its portability and recovery claims still
+have work left to do.
 
 See [the release status](docs/release-status.md) and
 [the soak manifest](docs/soak-start-manifest.md) for the exact gates and
 deferrals.
 
-This means this project went super sayian
+In less formal terms, the project went Super Saiyan. The release file calls it
+beta because release files are less excitable.
 
 ## Architecture in one screen
 
-This is wild and exactly how your email works, more or less.
+This is also, in broad strokes, how ordinary email works: a client submits a
+message to a server, the server owns delivery, and another client retrieves it.
+The unusual part is that this entire mail world is private to the lab.
 
 ```text
 approved internal client
@@ -66,7 +95,8 @@ authoritative state: /srv/stalwart on the separate 192 GiB data disk
 construction host:   ws-matriarch / qemu:///system / mail-core-9000
 durable identity:    mail.home.arpa
 ```
-## Party like it's 2005
+
+## A small server, on purpose
 
 The VM has 2 vCPUs, 4096 MiB of RAM, a 32 GiB system disk, a separate
 192 GiB mail-data disk, and one NIC on `br-lab10`. The host bridge uses the
@@ -93,9 +123,12 @@ The initial operational correspondents are:
 
 ### Hypervisors
 
-- `hv-lore@home.arpa` - obvs Star Trek reference. It's deep actually.
-- `hv-katra@home.arpa` - same. not so.
-- `hv-matrix@home.arpa` - matrix is a darker, grittier, more consequential reality and where i have evolved to
+- `hv-lore@home.arpa` — a Star Trek reference, and a name for accumulated
+  knowledge;
+- `hv-katra@home.arpa` — another Star Trek reference, this time for the part of
+  a person that should survive a change of container;
+- `hv-matrix@home.arpa` — the darker, more consequential reality, and the name
+  of the environment the lab grew into.
 
 ### Workstations
 
@@ -106,13 +139,13 @@ The initial operational correspondents are:
 
 Each has a distinct credential. Seven machine bundles and the Admin bundle are
 in dual Foundation custody; the ninth archived bundle belongs to
-`louis@home.arpa`. The accepted manifest does not record a separate
-Cluster-Admin onboarding archive, so this README does not pretend otherwise.
-There is no shared cluster password, because identity that cannot be
-distinguished is not much of an identity. Supporting local accounts include
-`postmaster`, `louis`, and the disposable `test-sender` and `test-receiver`
-identities. The canonical administrative name is
-`cluster-admin@home.arpa`; the underscore variant does not exist.
+`louis@home.arpa`. A separate Cluster Admin onboarding archive is not present
+in the accepted manifest, so it is not counted here. There is no shared cluster
+password: each correspondent can be authenticated, tested, rotated, and
+revoked independently. Supporting local accounts include `postmaster`,
+`louis`, and the disposable `test-sender` and `test-receiver` identities. The
+canonical administrative name is `cluster-admin@home.arpa`; the underscore
+variant does not exist.
 
 Machine mailboxes accept delivery only from `admin@home.arpa` and
 `cluster-admin@home.arpa`. Machines may send status mail to either
@@ -124,8 +157,12 @@ both administrative mailboxes.
 
 `ws-alpha` and `ws-wowzerwin` retain their identities, credentials, bundles,
 and dual custody, but their physical endpoint enrollment is operator-deferred.
-The repository does not upgrade “deferred” to “verified” by improving the
-adjective.
+Their status remains deferred until the endpoint tests actually run.
+
+This is intentionally a mail policy rather than a general messaging free-for-
+all. Machines can report upward, administrators can answer, and one compromised
+or mistaken machine credential cannot quietly become a broadcast identity for
+the rest of the lab.
 
 ## What works now
 
@@ -143,7 +180,9 @@ adjective.
 - a mount-guarded data path on the separate guest disk; and
 - an auditable packet/evidence trail for the construction work.
 
-## The guts are good, but no lipstick on this pig
+## What is intentionally not running
+
+The guts are good. The lipstick can wait.
 
 - no public SMTP listener or public MX path;
 - no port 25 listener, public administration, public JMAP, POP3, or
@@ -156,16 +195,29 @@ adjective.
 - no selected permanent hypervisor, production VM identifier, or migration;
 - no claim of promotion or production readiness.
 
-Matriarch is a construction and soak surface, not a constitutional amendment.
-The durable service identity is `mail.home.arpa`, and the appliance must remain
+Matriarch is the construction and soak host, not part of the service's permanent
+identity. The durable name is `mail.home.arpa`, and the appliance must remain
 movable.
+
+The disabled list is part of the design, not a backlog disguised as failure.
+Each item crosses a different trust, routing, or recovery boundary. Enabling one
+requires evidence for that boundary rather than confidence borrowed from the
+parts that already work.
 
 ## Construction and soak
 
 Changes were built as small, reviewed packets: observe, render, validate, ask
 for authority, mutate one bounded surface, and verify independently. This is
-slower than improvising until the first time improvisation points `mkfs` at the
-wrong disk. The project prefers a clean stop over a clever guess.
+slower than improvising, but it leaves every destructive target and rollback
+path visible before execution. The project prefers a clean stop over a clever
+guess.
+
+That process is not ceremony for its own sake. It is how the project handled a
+real sequence of uncertain disk geometry, an empty qcow2 image whose allocation
+metadata changed, recovery administration that needed stronger isolation, a
+mail-domain validator disagreement, and a DNS method that produced an unwanted
+reverse record. The process changed when evidence showed a better answer; the
+safety boundary stayed put.
 
 The soak keeps normal internal traffic on the appliance while watching service
 and VM restarts, queue behavior, disk growth, authentication failures,
@@ -195,12 +247,19 @@ restore exercise.
 Run `scripts/validate/all.sh` for the repository checks. No runtime secret,
 mail data, private key, or decrypted onboarding material belongs in Git.
 
+If you are new to the repository, start with the project story and architecture,
+then read the runbook. Open an implementation packet when you need the exact
+change boundary or want to understand why a particular choice exists. Evidence
+is the final word on whether that packet merely proposed something or actually
+proved it.
+
 ## Lessons from the blockers
 
 - Historical device names are clues, not storage authority. The 256 GiB host
   allocation was made only after current geometry proved the tail was free.
 
-  This isn't MS-DOS or Windows 95. You need to be careful here.
+  Modern storage tooling is powerful enough that nostalgia for simpler disk
+  layouts is understandable. It is still better to prove the sector range.
 
 - qcow2 allocation metadata is not guest-visible data. Comparing the data disk
   to a fresh zero image resolved that distinction without recreating evidence.
@@ -208,23 +267,32 @@ mail data, private key, or decrypted onboarding material belongs in Git.
   firewall workaround would have hidden the design mistake instead of fixing
   it.
 
-  We are used to Proxmox, not local VMs.
-  
+  Most of my VM habits came from Proxmox. Local modular libvirt has different
+  control surfaces, so the familiar assumptions had to be tested again.
+
 - `home.arpa` support was tested against Stalwart 0.16.15 rather than assumed
   from either documentation or the earlier 0.16.4 failure.
 
-  I was lazy and didn't check the latest version
-  
+  The first attempt used the pinned version already under review. The current
+  patch release changed the answer, which was a useful reminder to separate a
+  product limitation from a version-specific result.
+
 - A hosts-style DNS entry synthesized a PTR, so it was rolled back and replaced
   with an exact forward-only record.
 
-  What I have done with DNS is a war-crime.
-  
+  My DNS had accumulated enough history to qualify as archaeology. The fix was
+  not to hide that history, but to identify the current source of truth and
+  reconcile the deployment path.
+
 - Encryption answered “who can read this archive?” It did not answer who owned
   the CA, whether both vault copies matched, or whether either vault returned
   to read-only. Those required separate proofs.
 
-  And I sure won't talk about it here. 
+The recurring lesson was simple: representation is not the same as meaning. A
+device name is not ownership, allocated qcow2 bytes are not necessarily guest
+data, an encrypted file is not automatically well-custodied, and a running
+daemon is not proof that its state lives on the intended disk. Tests became
+much more useful once they measured the invariant I actually cared about.
 
 ## Next gates
 
@@ -234,4 +302,11 @@ deferred endpoint enrollment, and a separate promotion decision. Fastmail
 bridging, permanent placement, and migration remain later projects with their
 own authorization boundaries.
 
-Make sure it works. Yep. That's it.
+The intended destination is deliberately modest: a local mail appliance whose
+identity survives a host move, whose state can be restored without guesswork,
+and whose external dependencies can fail without taking local communication
+with them. If it reaches that point, it will be because each claim was tested at
+the boundary where it matters—not because the README learned to sound certain.
+
+In plain language: make sure it works. Then make sure I can explain why it
+works, recover it when it does not, and move it without changing who it is.
