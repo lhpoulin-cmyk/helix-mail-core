@@ -1,6 +1,6 @@
 # Fastmail store-and-forward bridge packet
 
-Status: rendered; execution authorization required
+Status: execution attempted; fail-closed rollback complete; correction required
 Baseline: `d1471330ea7964d148f6960cd50e62c957de86c2`
 Target: `mail.home.arpa` / Stalwart `0.16.15`
 
