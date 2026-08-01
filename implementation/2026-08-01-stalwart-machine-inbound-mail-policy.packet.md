@@ -63,6 +63,17 @@ sole local Domain, and the live Account inventory contains unique `admin` and
 corrected script, select it, restart once with the selector present, and repeat
 the complete matrix. Preserve the rollback plan throughout.
 
+The account-name correction was also rejected by the Admin positive gate, so
+the selector was again returned to `false`. A separate live negative test then
+proved that an authenticated machine account cannot submit an administrative
+envelope sender: `hv-lore` authentication with `MAIL FROM:<admin@home.arpa>`
+was rejected before RCPT with code 501. Therefore the final bounded correction
+uses the canonical envelope sender addresses while retaining the independently
+proven submission sender-impersonation control:
+`config/stalwart/machine-inbound-policy-envelope-sender-correction.plan.ndjson`.
+Both controls are required; a future relaxation of sender matching invalidates
+this policy and must fail the release gate.
+
 ## Immediate verification before demonstrations
 
 Using protected existing credentials and trusted TLS:
