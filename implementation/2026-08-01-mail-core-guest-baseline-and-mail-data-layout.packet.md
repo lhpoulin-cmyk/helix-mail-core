@@ -152,7 +152,7 @@ sgdisk --clear \
   --typecode=1:8300 \
   --change-name=1:stalwart-data \
   /dev/vdb
-partprobe /dev/vdb
+blockdev --rereadpt /dev/vdb
 udevadm settle
 test -b /dev/vdb1
 test "$(lsblk -bnro START /dev/vdb1)" = 2048
