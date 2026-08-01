@@ -1,5 +1,8 @@
 # Helix-ARPA mail core
 
+You are encouraged to skim past boring technical details unless so inclined. 
+I do it all the time, it's exhilarating. 
+
 Helix mail-core is a private mail system for a homelab whose machines need
 durable names, distinct credentials, and a way to report to their operator
 without borrowing identity from a public provider. It runs Stalwart on a small
