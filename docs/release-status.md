@@ -3,14 +3,14 @@
 ```text
 VERSION=1.1.1-alpha
 SOAK_STATUS=STARTED
-BETA_ELIGIBLE=false
+BETA_ELIGIBLE=true
 ```
 
 ## 1.1.1 release-blocker mail policy
 
-Version 1.1.1 remains alpha and is not beta-eligible until the restricted
-machine-inbound policy is deployed and demonstrated from every required
-participant.
+The restricted machine-inbound policy is deployed and has been demonstrated
+from every required participant. Version 1.1.1 remains alpha; the actual beta
+promotion still requires a separate operator decision.
 
 Required physical endpoints:
 
@@ -55,13 +55,16 @@ export, and production placement remain independent gates.
 
 ## Current gate result
 
-The earlier unrestricted local send/receive demonstration remains factual but
-does not satisfy this stricter replacement policy. The policy has not yet been
-deployed or demonstrated.
+The `machine-inbound-admin-only` RCPT-stage system Sieve policy is active.
+Submission sender impersonation is rejected, so only the canonical Admin and
+Cluster Admin envelope identities can reach `hv-*` and `ws-*` recipients.
+Every required positive and negative demonstration passed from the physical
+endpoint or approved administrative client.
 
 ```text
+1.1.1 ALPHA-TO-BETA BLOCKER SATISFIED
 VERSION=1.1.1-alpha
-BETA_ELIGIBLE=false
+BETA_ELIGIBLE=true
 ```
 
 The version remains `1.1.1-alpha`. Changing the release label to beta requires

@@ -12,3 +12,7 @@
 - Replaced that blocker with a stricter machine-inbound policy requiring
   administrator-only delivery to every `hv-*` and `ws-*` mailbox; reset
   `BETA_ELIGIBLE=false` pending deployment and demonstration.
+- Deployed and verified the restricted machine-inbound RCPT policy, completed
+  fresh physical-endpoint and administrative send/reply/retrieval tests, proved
+  the required unauthorized-local and external-relay rejections, and restored
+  `BETA_ELIGIBLE=true` while retaining `VERSION=1.1.1-alpha`.
