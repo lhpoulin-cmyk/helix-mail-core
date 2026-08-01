@@ -2,7 +2,7 @@
 
 Date: 2026-08-01  
 Starting mail-core commit: `40eb4ad083c23a4600a16d919002ec41bc7d3caf`
-Result: `PARTIAL — THREE PHYSICAL ENDPOINTS UNAVAILABLE`
+Result: `PARTIAL — TWO PHYSICAL ENDPOINTS UNAVAILABLE`
 Soak: `SOAK_STATUS=NOT_STARTED`
 
 ## Identity and bundle result
@@ -54,6 +54,7 @@ hv-lore@home.arpa
 hv-katra@home.arpa
 hv-matrix@home.arpa
 ws-matriarch@home.arpa
+ws-hadrian@home.arpa
 louis@home.arpa
 admin@home.arpa
 ```
@@ -62,9 +63,8 @@ The following required physical endpoints were unavailable from the approved
 control path and remain `GENERATED — ENDPOINT TEST PENDING`:
 
 ```text
-ws-alpha@home.arpa       192.168.10.84 returned no route to host
-ws-hadrian@home.arpa     no currently resolvable/reachable SSH endpoint
-ws-wowzerwin@home.arpa   no currently resolvable/reachable SSH endpoint
+ws-alpha@home.arpa       192.168.10.84 is offline/unreachable
+ws-wowzerwin@home.arpa   Windows endpoint 192.168.10.82 is offline/unreachable
 ```
 
 Their Stalwart identities, distinct credentials, encrypted bundles, and both
@@ -79,5 +79,26 @@ wildcard/public administration, Fastmail, and external relay remain disabled.
 No RouterOS, firewall, bridge, NetworkManager, libvirt, host-storage, public
 DNS, or public-certificate mutation occurred.
 
-The soak cannot start until all three unavailable workstation endpoint tests
+## Hadrian continuation
+
+Current Infrastructure evidence identified `192.168.10.86` as Hadrian's active
+Wi-Fi identity. The address became reachable and strict SSH verification
+confirmed hostname `ws-hadrian`, Fedora 44, and x86_64.
+
+Only `ws-hadrian-mail-onboarding.tar.gz.age` was retrieved from read-only
+Foundation. Its outer hash, safe archive structure, internal checksums,
+`ws-hadrian@home.arpa` manifest identity, service address, and Helix root CA
+matched the accepted records. Decrypted temporary material was removed.
+
+The Helix root was absent from Hadrian's trust anchors. It was installed using
+Fedora's supported `/etc/pki/ca-trust/source/anchors/` and `update-ca-trust`
+path, then verified as an active CA anchor. Hadrian's own protected credential
+and mail settings were installed without another machine's credential.
+
+From physical `ws-hadrian`, trusted TLS, authenticated submission, local
+delivery, receipt of a reply, IMAPS retrieval, a fresh random incorrect
+credential rejection, external relay rejection, and absence of pre-TLS
+password mechanisms all passed. Hadrian is `ENROLLED AND VERIFIED`.
+
+The soak cannot start until both unavailable workstation endpoint tests
 pass. No soak timestamp is assigned.
