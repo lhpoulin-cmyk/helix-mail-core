@@ -1,0 +1,48 @@
+[Unit]
+Description=Stalwart local mail foundation
+Documentation=https://stalw.art/docs/
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/srv/stalwart
+ConditionPathIsMountPoint=/srv/stalwart
+Conflicts=postfix.service sendmail.service exim4.service
+
+[Service]
+Type=simple
+User=stalwart
+Group=stalwart
+UMask=0077
+Environment=TMPDIR=/srv/stalwart/tmp
+EnvironmentFile=-/etc/stalwart/stalwart.env
+ExecStartPre=/usr/bin/mountpoint -q /srv/stalwart
+ExecStart=/usr/local/bin/stalwart --config=/etc/stalwart/config.json
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=65536
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+DevicePolicy=closed
+ReadWritePaths=/srv/stalwart/data /srv/stalwart/blobs /srv/stalwart/log /srv/stalwart/tmp
+
+[Install]
+WantedBy=multi-user.target
