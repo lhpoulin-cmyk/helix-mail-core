@@ -38,6 +38,15 @@ The current DATA-stage script is disabled. The existing
 `machine-inbound-admin-only` script is attached at a different SMTP stage and
 is not modified. Current routes are `local` and `mx`; Fastmail is absent.
 
+A 2026-07-26 Katra Postfix canary is useful historical evidence, not a reusable
+configuration. It reached `smtp.fastmail.com` over verified TLS, then failed
+before authentication because that Postfix installation lacked a PLAIN/LOGIN
+SASL client mechanism. Its shared `cluster_node@poulin-arpa.com` identity,
+credential map, sender rewriting, and Postfix settings were rolled back and are
+outside this packet. Stalwart supplies its own SMTP AUTH client, so the missing
+Postfix SASL module is not a mail-core package dependency. The canary does not
+waive the guest-local TLS, AUTH, sender-compatibility, or rollback gates below.
+
 ## Exact proposed policy
 
 The repository-rendered plan is

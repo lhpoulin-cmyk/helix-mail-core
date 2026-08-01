@@ -47,3 +47,19 @@ One material uncertainty remains intentionally operational: Fastmail may reject
 a transparent copy carrying an unverified visible sender. The packet therefore
 makes one bounded real-recipient compatibility test a required activation gate
 and forbids silent sender rewriting.
+
+## Historical Katra canary
+
+The operator supplied a handoff recorded 2026-07-26. It states that `hv-katra`
+completed a bounded Postfix canary far enough to establish verified TLS to
+`smtp.fastmail.com`. SMTP authentication did not occur because the Postfix host
+lacked its PLAIN/LOGIN SASL client mechanism. The canary used the separate
+shared `cluster_node@poulin-arpa.com` route and was fully rolled back: no relay,
+credential map, sender-rewrite map, notification target, or queued test message
+remained.
+
+This is supporting history only. It establishes that one lab host reached the
+Fastmail TLS endpoint on that date. It does not establish current reachability
+from `mail.home.arpa`, authenticate the dedicated Fastmail identity, prove
+transparent-copy sender acceptance, or justify importing Postfix configuration
+into Stalwart.
