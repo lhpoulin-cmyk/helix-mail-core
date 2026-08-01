@@ -1,44 +1,77 @@
 # Construction, soak testing, and promotion
 
-Construction placement is Fedora 44 Matriarch / `mail-core / VMID 9000`. Its
-lifecycle state is **construction / soak testing**. This placement is temporary;
-the durable identity is always `mail.home.arpa`.
+The current appliance is `mail-core-9000` on Fedora 44 Matriarch. Its durable
+identity is `mail.home.arpa`; its lifecycle is beta construction soak, not
+production.
 
-## Soak-entry gate
+## Accepted soak start
 
-The two-week clock begins only after the appliance has passed and recorded all
-initial local acceptance tests: authenticated submission and local IMAPS
-retrieval with disposable identities, rejected unauthorized relay, service and
-VM reboot recovery, queue persistence, Internet-outage local delivery, and a
-documented backup/restore status. A passing test does not authorize promotion.
+The soak began at `2026-08-01T14:06:05-04:00` after forward DNS, trusted TLS,
+local-mail acceptance, nine distinct onboarding bundles, dual Foundation
+placement, all currently serviceable endpoint enrollments, and two explicit
+endpoint deferrals. The minimum fourteen-day review point is
+`2026-08-15T14:06:05-04:00`.
 
-During at least fourteen continuous calendar days, retain real internal mail
-traffic and observe authenticated submission, mailbox delivery, identity
-isolation, service/VM reboot recovery, queues, disk/mailbox growth, failed
-authentication, certificates, appliance-export freshness, restore viability, Internet
-outages, and (only if later authorized) Fastmail relay behavior. Significant
-faults, data-loss risk, unresolved relay behavior, or a configuration redesign
-restarts or extends the period.
+`ws-alpha` and `ws-wowzerwin` remain deferred. Their identities, credentials,
+bundles, and custody records exist; their physical endpoint tests are not
+claimed. The exact starting state is in
+[`soak-start-manifest.md`](soak-start-manifest.md).
+
+The later 1.1.1 release blocker added a stricter machine-delivery policy and
+fresh demonstrations from five physical endpoints plus Admin and Cluster
+Admin. That work made the repository beta-eligible and the operator promoted
+it to `1.1.1-beta`. It did not restart the soak clock.
+
+## What to observe
+
+For at least fourteen continuous calendar days, retain real internal mail
+traffic and record:
+
+1. authenticated submission and mailbox retrieval;
+2. machine-to-administrator reporting and administrative replies;
+3. rejection of unauthorized machine delivery and external relay;
+4. service and planned VM restart recovery;
+5. queue depth, retries, and delivery failures;
+6. disk, database, and mailbox growth;
+7. failed authentication and unexpected listener changes;
+8. certificate validity and renewal timing;
+9. DNS consistency across both resolvers;
+10. configuration changes and their evidence.
+
+A significant safety fault, data-loss risk, material configuration redesign,
+or unresolved relay behavior extends or restarts the relevant acceptance
+period. A quiet calendar is useful; it is not, by itself, a test result.
+
+## Gates that remain open
+
+The current soak does not establish:
+
+- enrollment of the two deferred physical endpoints;
+- a consistent portable appliance export;
+- an isolated import and restore proof;
+- `APPLIANCE_EXPORT_REFERENCE`;
+- Fastmail behavior;
+- permanent hypervisor or production VM identity;
+- migration, promotion readiness, or production readiness.
+
+Fastmail is not part of the current soak because it is disabled. If later
+authorized, its observation window and failure behavior belong in a separate
+bounded gate rather than being backdated into this one.
 
 ## Promotion-readiness report
 
-At soak completion create a private-evidence-backed report containing:
+At or after the minimum review point, create a private-evidence-backed report
+covering dates, versions, identities exercised, message and queue activity,
+restarts and outages, failures, changes, export/restore status, deferred hosts,
+known limitations, and a recommendation to promote, extend, or reject.
 
-1. soak start and end dates;
-2. software versions;
-3. identities exercised;
-4. message and queue activity;
-5. outages and restarts tested;
-6. failures or unexpected behavior;
-7. changes made during testing;
-8. backup and restore status;
-9. known limitations; and
-10. recommendation: promote, extend, or reject.
+The report is an input to a decision. It is not the decision.
 
 ## Handoff boundary
 
-Soak completion produces a promotion-ready appliance export and state manifest.
-Production-hypervisor selection, production VMID, migration, and deployment
-are separate work. The handoff preserves `mail.home.arpa`, identities,
-mailboxes, queues, TLS, secrets, version information, export manifest, and
-restore instructions.
+A promotion candidate requires a portable state artifact that preserves
+`mail.home.arpa`, identities, mailboxes, queues, TLS, protected
+secret-restoration references, versions, checksums, and restore instructions.
+Production host selection, VM identifier, network attachment, and cutover are
+separate work. Two active appliances must never share the same authoritative
+mail state or service identity.

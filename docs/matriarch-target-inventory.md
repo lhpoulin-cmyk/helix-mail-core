@@ -1,5 +1,13 @@
 # Matriarch construction target inventory
 
+> Historical construction record. The observations and unresolved decisions
+> below describe their collection time. Current accepted state includes the
+> running `mail-core-9000` domain, `mail-core-construction` storage pool,
+> `br-lab10`, Debian 13, and the beta mail service. See `architecture.md`,
+> `release-status.md`, and the execution evidence before making a current-state
+> claim. The historical sections are retained rather than rewritten into the
+> present tense.
+
 Status: Matriarch libvirt bootstrap completed and verified; the construction
 inventory is proposed, validated, and non-deployable. This inventory records
 only the supervisor-verified evidence supplied for this run. It does not

@@ -1,4 +1,9 @@
-# Recommended next bounded implementation packet
+# Historical first construction packet
+
+> Historical decision record. This was the recommended next packet before
+> Matriarch construction. The VM, storage, bridge, DNS, TLS, identities, and
+> beta tests now exist. Do not use the unresolved values below as current
+> state; see `release-status.md`, `architecture.md`, and the dated evidence.
 
 **Objective:** establish current, read-only placement evidence for the requested
 `hv-matriarch` target and produce a fully resolved render; do not create VM

@@ -1,9 +1,11 @@
 {
-  "seed_on_approved_phase_5": [
-    "cluster-admin@home.arpa", "postmaster@home.arpa", "hv-matriarch@home.arpa",
-    "hv-lore@home.arpa", "hv-katra@home.arpa"
+  "current_authorized_identities": [
+    "postmaster@home.arpa", "cluster-admin@home.arpa",
+    "test-sender@home.arpa", "test-receiver@home.arpa",
+    "louis@home.arpa", "admin@home.arpa",
+    "hv-lore@home.arpa", "hv-katra@home.arpa", "hv-matrix@home.arpa",
+    "ws-matriarch@home.arpa", "ws-alpha@home.arpa",
+    "ws-hadrian@home.arpa", "ws-wowzerwin@home.arpa"
   ],
-  "document_only": ["b70-encode@home.arpa", "b70-compute@home.arpa", "backup@home.arpa", "security@home.arpa", "storage@home.arpa"],
   "credential_rule": "one unique secret per machine-or-service identity; never committed"
 }
-

@@ -1,33 +1,93 @@
 # Operator runbook
 
-## Render and review
+This page describes the current beta appliance. Construction commands remain
+in their dated implementation packets and must not be replayed as routine
+operations.
 
-1. Obtain fresh read-only construction-target evidence: VMID 9000 availability,
-   sufficient VM storage, bridge/VLAN, guest address, DNS path, firewall policy,
-   CA practice, and a portable appliance-export location. Do not inventory or
-   design Matriarch backup systems.
-2. Copy the production inventory example to ignored `values.env`; populate
-   only observed, approved values.
-3. Render, validate, and review `.rendered/deployment-report.md`.
-4. Submit a bounded implementation packet. Passing render is not authorization.
+## Current identity
 
-## Deployment sequence after authorization
+```text
+service:       mail.home.arpa
+guest address: 192.168.100.199/24
+domain:        mail-core-9000 on qemu:///system
+host:          ws-matriarch
+data mount:    /srv/stalwart
+release:       1.1.1-beta
+soak:          started 2026-08-01T14:06:05-04:00
+```
 
-Create construction VMID 9000 with two disks (system and isolated data), internal interface
-only, and a current supported Debian stable guest. Mount data at
-`/srv/stalwart`; install the verified pinned Stalwart release; apply the
-policy contract through Stalwart's supported management API/CLI; install local
-CA material; create disposable test identities only. Do not enable Fastmail.
+Matriarch is temporary construction placement. Do not encode it into mailbox
+identity, certificates, or restoration assumptions.
 
-## Local checks
+## Routine read-only checks
 
-Produce machine-readable status covering service health, `df`, queue depth,
-failed authentication, certificate expiry, delivery errors, export freshness,
-last local delivery, and last Fastmail relay once enabled. The future status
-script must return nonzero on missing data or stale backup, without modifying
-state.
+Confirm the guest is running in `qemu:///system`, autostart remains disabled,
+and its CPU, memory, disks, and sole `br-lab10` NIC still match the accepted
+domain. Inside the guest, check:
 
-Run the Phase 4 disposable test: authenticated sender -> authenticated
-submission -> local recipient -> IMAPS retrieval; attempt unauthenticated
-submission and external relay; restart service; repeat retrieval; reboot VM;
-repeat health check. No external test mail.
+- `mail.home.arpa` hostname and `192.168.100.199/24` addressing;
+- active `stalwart`, SSH, and QEMU guest-agent services;
+- `/srv/stalwart` is a real XFS mount from the data disk;
+- `/var/lib/stalwart` remains absent;
+- free space and mailbox/queue growth;
+- exact Stalwart listeners: loopback management/test interfaces plus internal
+  587 and 993, with no port 25 or wildcard bind;
+- certificate chain, SAN, expiry, and the 30-day renewal review threshold;
+- `allowRelaying=false`, Fastmail absent, and the machine RCPT policy selected;
+- both resolvers return the same forward A record and no invented PTR.
+
+Read-only health is evidence, not authorization to repair forward. When a
+check differs, record the difference and use a bounded correction packet.
+
+## Mail acceptance checks
+
+Use a disposable local correlation identifier and the protected credential
+belonging to the client under test. Verify:
+
+1. no password authentication is offered before STARTTLS;
+2. authenticated submission succeeds over trusted TLS;
+3. the local recipient receives the message;
+4. trusted IMAPS retrieves it;
+5. the message survives a service restart and, when scheduled, a guest reboot;
+6. an external recipient is rejected before DATA;
+7. an unauthorized local sender to an `hv-*` or `ws-*` recipient receives
+   SMTP 550;
+8. an administrative sender can deliver to that same machine;
+9. a machine can report to Admin or Cluster Admin and retrieve the reply.
+
+Do not use a real external recipient. Do not copy one endpoint's credential to
+another endpoint to make a test convenient.
+
+## Restart and reboot
+
+Before restarting Stalwart, prove `/srv/stalwart` is mounted and record queue
+state. After restart, verify the mount, listeners, certificate, relay policy,
+and a known local message. A guest reboot adds checks for the UUID-backed mount,
+network, SSH, guest agent, and VM autostart state.
+
+The mount-guard test that deliberately removes `/srv/stalwart` is not routine
+maintenance. It is destructive to availability and requires a reviewed packet
+with a verified restoration path.
+
+## Soak observations
+
+Record service and VM restarts, queue behavior, local delivery failures, failed
+authentication, disk/mailbox growth, certificate lifetime, endpoint behavior,
+and any configuration change. The canonical clock is in
+[`soak-start-manifest.md`](soak-start-manifest.md). A material redesign or
+safety failure may extend the soak; do not edit its start time to improve the
+story.
+
+## Export and recovery
+
+No appliance export or isolated restore has passed yet. Follow
+[`appliance-export.md`](appliance-export.md) and
+[`backup-and-restore.md`](backup-and-restore.md) when the opaque export
+destination is authorized. Never copy a live RocksDB tree and call the presence
+of files a restore test.
+
+## Disabled boundaries
+
+Do not enable Fastmail, port 25, public administration, public JMAP, POP3,
+ManageSieve, ACME, public DNS, PTR publication, VM autostart, or external
+delivery through routine operation. Each crosses a separately reviewed gate.

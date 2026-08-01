@@ -1,25 +1,26 @@
 # Test scope
 
-Static tests cover configuration syntax, obvious tracked secrets, fail-closed
-relay/submission policy, Fastmail disabled state, and rejection of unresolved
-production renders. Runtime results remain unpassed until an authorized VM and
-disposable identities exist: local delivery, unauthorized relay rejection,
-restart persistence, backup structure validation, and reboot recovery.
+Repository tests cover configuration syntax, obvious tracked secrets,
+fail-closed relay and submission policy, Fastmail's disabled state, unresolved
+production renders, backup-manifest structure, and the worker/evidence
+handoff machinery.
+
+The static suite does not retest the live beta appliance. Runtime acceptance is
+recorded in [`../evidence/`](../evidence/): local delivery, trusted submission
+and IMAPS, unauthorized machine-delivery rejection, external-relay rejection,
+service and guest reboot persistence, mount-guard behavior, and physical
+endpoint demonstrations have passed under their bounded packets.
+
+`phase4-runtime-acceptance.sh` remains a guarded checklist and deliberately
+does not discover or mutate a live target. A printed skip is not evidence that
+the live tests are missing; it means this repository script has no standing
+authorization to run them.
 
 `test-worker-dispatch-static.sh` checks dispatcher and waiter guardrails without
-contacting tmux.
+contacting a real worker. `test-headless-finalization.sh` uses a disposable Git
+clone with fake collector and Codex binaries. `test-host-evidence.sh` uses fake
+observation commands to test fixed profiles, sanitization, hostile-PATH
+resistance, path guards, failure retention, and evidence integrity.
 
-`test-headless-finalization.sh` uses a disposable Git clone with fake collector
-and Codex binaries to cover finalization, evidence failures, signals, atomic
-metadata, and missing-result rejection. It never invokes host observation
-commands or a real Codex service.
-
-`test-host-evidence.sh` uses only fake observation commands and a fake Codex
-binary to verify the fixed collector profile, system/session `dominfo`
-classification, Machine-ID sanitization, hostile-PATH resistance, failure
-retention, path guards, concurrent destinations, and pre/post evidence
-integrity checks.
-
-`phase4-runtime-acceptance.sh` is the guarded runtime checklist; it deliberately
-skips until its explicitly authorized target exists. `test-restore-structure.sh`
-checks the backup-manifest contract non-destructively.
+`test-restore-structure.sh` checks only the manifest contract. An actual
+appliance export and isolated restore are still unverified.
