@@ -2,8 +2,8 @@
 
 Date: 2026-08-01  
 Starting mail-core commit: `40eb4ad083c23a4600a16d919002ec41bc7d3caf`
-Result: `PARTIAL — TWO PHYSICAL ENDPOINTS UNAVAILABLE`
-Soak: `SOAK_STATUS=NOT_STARTED`
+Result: `ACCEPTED UNDER OPERATOR-APPROVED ENDPOINT DEFERRALS`
+Soak: `SOAK_STATUS=STARTED`
 
 ## Identity and bundle result
 
@@ -59,8 +59,8 @@ louis@home.arpa
 admin@home.arpa
 ```
 
-The following required physical endpoints were unavailable from the approved
-control path and remain `GENERATED — ENDPOINT TEST PENDING`:
+The following physical endpoints were unavailable from the approved control
+path before the operator amended the soak gate:
 
 ```text
 ws-alpha@home.arpa       192.168.10.84 is offline/unreachable
@@ -68,8 +68,8 @@ ws-wowzerwin@home.arpa   Windows endpoint 192.168.10.82 is offline/unreachable
 ```
 
 Their Stalwart identities, distinct credentials, encrypted bundles, and both
-verified Foundation copies exist. No endpoint was marked enrolled without a
-successful physical endpoint test.
+verified Foundation copies exist. Neither endpoint is falsely classified as
+tested.
 
 ## Preserved boundaries
 
@@ -100,5 +100,29 @@ delivery, receipt of a reply, IMAPS retrieval, a fresh random incorrect
 credential rejection, external relay rejection, and absence of pre-TLS
 password mechanisms all passed. Hadrian is `ENROLLED AND VERIFIED`.
 
-The soak cannot start until both unavailable workstation endpoint tests
-pass. No soak timestamp is assigned.
+## Operator-approved endpoint deferrals and soak start
+
+The operator confirmed that `ws-alpha` currently cohabitates with the already
+enrolled and verified `ws-matriarch` operating surface. Its separate endpoint
+test is deferred without deleting or merging the `ws-alpha@home.arpa` identity,
+credential, or bundle.
+
+The operator also confirmed that `ws-wowzer-win` is temporarily not
+serviceable. Its endpoint test is explicitly deferred. Its distinct identity,
+credential, encrypted bundle, and dual custody remain preserved for later
+enrollment; no test success is claimed.
+
+Immediately before soak start, both configured resolvers still returned only
+`mail.home.arpa A 192.168.100.199`. Submission and IMAPS independently verified
+the accepted certificate chain and hostname over TLS 1.3. All nine archive
+hashes matched on both distinct read-only Foundations, and scoped plaintext
+assembly/verification directories remained absent.
+
+Under this amended operator-approved gate, every currently serviceable endpoint
+and both human identities meet the enrollment contract. The construction soak
+started at `2026-08-01T14:06:05-04:00` in `America/Detroit`. The minimum
+two-week period becomes eligible for review at
+`2026-08-15T14:06:05-04:00`.
+
+Soak start does not declare promotion readiness and does not authorize
+Fastmail, public SMTP, production placement, or export-reference work.
