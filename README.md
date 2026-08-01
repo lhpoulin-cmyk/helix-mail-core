@@ -1,7 +1,7 @@
 # Helix-ARPA mail core
 
-You are encouraged to skim past boring technical details unless so inclined. 
-I do it all the time, it's exhilarating. 
+You are welcome to skim the technical details unless you are in the mood for
+them. I do it all the time. It is exhilarating.
 
 Helix mail-core is a private mail system for a homelab whose machines need
 durable names, distinct credentials, and a way to report to their operator
