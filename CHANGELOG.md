@@ -16,3 +16,8 @@
   fresh physical-endpoint and administrative send/reply/retrieval tests, proved
   the required unauthorized-local and external-relay rejections, and restored
   `BETA_ELIGIBLE=true` while retaining `VERSION=1.1.1-alpha`.
+- Promoted the repository release state to `VERSION=1.1.1-beta` by explicit
+  operator decision. Preserved the active soak and its timestamps, deferred
+  endpoint status, disabled public SMTP and Fastmail boundaries, and all
+  existing credentials and bundles; this does not declare promotion or
+  production readiness.

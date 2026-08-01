@@ -1,7 +1,7 @@
 # Release status
 
 ```text
-VERSION=1.1.1-alpha
+VERSION=1.1.1-beta
 SOAK_STATUS=STARTED
 BETA_ELIGIBLE=true
 ```
@@ -9,8 +9,8 @@ BETA_ELIGIBLE=true
 ## 1.1.1 release-blocker mail policy
 
 The restricted machine-inbound policy is deployed and has been demonstrated
-from every required participant. Version 1.1.1 remains alpha; the actual beta
-promotion still requires a separate operator decision.
+from every required participant. The operator promoted version 1.1.1 from
+alpha to beta after accepting the completed blocker evidence.
 
 Required physical endpoints:
 
@@ -48,10 +48,10 @@ specific gate and are not classified as verified.
 
 All five required hosts and both administrative mailboxes must be
 `SEND/RECEIVE VERIFIED` before setting `BETA_ELIGIBLE=true`. Satisfying this
-blocker does not change the release label to beta and does not declare
-promotion or production readiness. The operator must separately authorize the
-actual alpha-to-beta promotion. The two-week soak, Fastmail bridge, appliance
-export, and production placement remain independent gates.
+blocker establishes beta eligibility but does not itself declare promotion or
+production readiness. The operator separately authorized this alpha-to-beta
+release-state change. The two-week soak, Fastmail bridge, appliance export, and
+production placement remain independent gates.
 
 ## Current gate result
 
@@ -63,9 +63,18 @@ endpoint or approved administrative client.
 
 ```text
 1.1.1 ALPHA-TO-BETA BLOCKER SATISFIED
-VERSION=1.1.1-alpha
+VERSION=1.1.1-beta
 BETA_ELIGIBLE=true
 ```
 
-The version remains `1.1.1-alpha`. Changing the release label to beta requires
-a separate operator decision.
+The blocker was satisfied by all five required physical endpoints plus the
+distinct `admin@home.arpa` and canonical `cluster-admin@home.arpa` mailboxes.
+Operator-sent mail passed through every required venue, machine replies were
+retrieved successfully, unauthorized machine delivery was rejected with SMTP
+550, sender impersonation was rejected, and external relay remained rejected.
+
+This beta promotion does not declare promotion or production readiness, end or
+restart the soak, waive deferred-host requirements, enable public or external
+mail, or authorize appliance migration. `ws-alpha` and `ws-wowzerwin` remain
+deferred. Public SMTP and Fastmail remain disabled. Existing credentials and
+bundles are unchanged, and no `cluster_admin@home.arpa` identity exists.
