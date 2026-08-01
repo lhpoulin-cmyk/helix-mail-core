@@ -9,7 +9,9 @@ Credential-bearing access requires trusted TLS. Submission does not advertise
 password mechanisms before STARTTLS, IMAP plaintext authentication is off, and
 each account has a distinct credential. Unknown local recipients, unauthorized
 machine delivery, sender impersonation, external recipients, and domain
-relaying are rejected. Fastmail remains disabled.
+relaying are rejected. The Fastmail bridge can reach only the two reviewed
+aliases using its protected file-backed credential; ordinary users cannot use
+it as general external relay.
 
 The Helix Lab X.509 root is distributed only as a public trust anchor. The root
 and issuing private keys live in encrypted offline custody, not on the mail
@@ -29,6 +31,6 @@ future parser may classify mail and propose work; another reviewed control
 surface must authorize it.
 
 The remaining security claims are intentionally modest. The project has not
-proved an appliance export or isolated restore, enabled external transport, or
-selected production placement. Beta records a tested construction system, not
-an immunity certificate.
+proved an appliance export or isolated restore, durable external-copy queueing,
+or selected production placement. Beta records a tested construction system,
+not an immunity certificate.

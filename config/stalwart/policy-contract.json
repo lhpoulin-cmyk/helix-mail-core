@@ -18,7 +18,10 @@
     "domain_allow_relaying": false
   },
   "fastmail": {
-    "enabled": false,
+    "enabled": true,
+    "classification": "best-effort-external-copy",
+    "authoritative": false,
+    "restart_safe_active_delivery": false,
     "host": "smtp.fastmail.com",
     "auth_username": "louis@poulin-arpa.com",
     "delivery_recipients": [

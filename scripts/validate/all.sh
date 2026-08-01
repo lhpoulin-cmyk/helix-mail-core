@@ -13,7 +13,7 @@ done
 if rg -n --hidden --glob '!.git/**' --glob '!inventory/example/**' --glob '!**/*.md' '(?i)(password[[:space:]]*[:=][[:space:]]*[^" ]{8,}|api[_-]?key[[:space:]]*[:=]|BEGIN (RSA |EC )?PRIVATE KEY)' "$root"; then
   bad "possible tracked secret"
 else pass "no obvious tracked secret"; fi
-if jq -e '.fastmail.enabled == false and .recipient_policy.external_recipients == "reject" and .recipient_policy.unauthenticated_submission == "reject" and .recipient_policy.domain_allow_relaying == false and .listeners.smtp_port_25.enabled == false' "$root/config/stalwart/policy-contract.json" >/dev/null; then
+if jq -e '.fastmail.enabled == true and .fastmail.classification == "best-effort-external-copy" and .fastmail.authoritative == false and .fastmail.restart_safe_active_delivery == false and .recipient_policy.external_recipients == "reject" and .recipient_policy.unauthenticated_submission == "reject" and .recipient_policy.domain_allow_relaying == false and .listeners.smtp_port_25.enabled == false' "$root/config/stalwart/policy-contract.json" >/dev/null; then
   pass "fail-closed relay and submission policy"
 else bad "fail-closed relay and submission policy"; fi
 fastmail_plan="$root/config/stalwart/fastmail-store-forward.plan.ndjson.template"
@@ -24,7 +24,7 @@ if jq -se '
   ([.[] | select(.object == "MtaStageData")][0].value.script.match["0"].if == "local_port == 587 && !is_empty(authenticated_as)") and
   ([.[] | select(.object == "SieveSystemScript")][0].value["fastmail-admin-copy"].contents | contains("redirect :copy \"admin@poulin-arpa.com\";") and contains("redirect :copy \"cluster_admin@poulin-arpa.com\";") and contains("admin@home.arpa") and contains("cluster-admin@home.arpa"))
 ' "$fastmail_plan" >/dev/null; then
-  pass "Fastmail proposal remains exact-recipient, file-secret, TLS relay"
+  pass "Fastmail bridge remains exact-recipient, file-secret, TLS relay"
 else bad "Fastmail proposal boundary"; fi
 grep -q 'UNRESOLVED_' "$root/inventory/production/values.env.example" && pass "unresolved production example stops deployment" || bad "production example"
 [ "$fail" -eq 0 ] && { echo "VALIDATION PASS"; exit 0; }

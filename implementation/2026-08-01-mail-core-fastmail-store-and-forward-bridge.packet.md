@@ -1,6 +1,6 @@
-# Fastmail store-and-forward bridge packet
+# Fastmail best-effort external copy bridge packet
 
-Status: execution attempted; fail-closed rollback complete; correction required
+Status: beta limitation accepted; ordinary-path reactivation authorized
 Baseline: `d1471330ea7964d148f6960cd50e62c957de86c2`
 Target: `mail.home.arpa` / Stalwart `0.16.15`
 
@@ -17,6 +17,34 @@ may go to the corresponding alias: `admin@poulin-arpa.com` or
 `cluster_admin@poulin-arpa.com`. Fastmail is transport and off-site
 visibility, not the authoritative mailbox, an inbound route, or an identity
 source.
+
+## Beta reclassification
+
+The operator accepted the queue diagnosis at
+`b7feec017c669ec93e09430637aab9f6e0b8f9df` and reclassified this feature for
+version 1.1.1-beta as a **best-effort external copy bridge**. The original
+durability requirements below are retained as historical design and test
+context, but they no longer describe the beta acceptance gate.
+
+The beta bridge does not claim durable store-and-forward, exactly-once
+delivery, or restart-safe outbound queueing. An external copy may be lost if
+Stalwart is stopped or restarted while that copy is in an active delivery
+attempt. Local authoritative delivery is unaffected.
+
+Beta acceptance requires only:
+
+- immediate and unchanged local delivery;
+- one normal authenticated TLS copy from each administrative mailbox to its
+  corresponding approved Fastmail alias, accepted with SMTP 250;
+- no copy for another local identity;
+- rejection of arbitrary external recipients and general relay;
+- no public SMTP listener;
+- the protected file-backed credential remains unchanged;
+- no forced interruption or restart test.
+
+Before planned Stalwart restart or guest reboot, inspect the outbound queue. If
+it is nonempty, wait for completion or explicitly accept possible loss of the
+non-authoritative copies. Never replay automatically from uncertainty.
 
 This packet does not authorize public SMTP, Fastmail-to-home.arpa delivery,
 arbitrary external recipients, new identities, DNS changes, listener changes,
@@ -35,9 +63,10 @@ supports:
 - a `Relay` `MtaRoute` with implicit TLS, certificate validation, SMTP
   authentication, and a `File` secret source.
 
-The current DATA-stage script is disabled. The existing
+Before this reactivation, the DATA-stage selector is disabled. The existing
 `machine-inbound-admin-only` script is attached at a different SMTP stage and
-is not modified. Current routes are `local` and `mx`; Fastmail is absent.
+is not modified. The stable Fastmail route object remains installed but cannot
+receive new copies while the selector is disabled.
 
 A 2026-07-26 Katra Postfix canary is useful historical evidence, not a reusable
 configuration. It reached `smtp.fastmail.com` over verified TLS, then failed
@@ -59,8 +88,7 @@ The repository-rendered plan is
    `redirect :copy` to its corresponding `poulin-arpa.com` alias.
 2. `fastmail-admin-copy`, a Relay route to `smtp.fastmail.com:465` using SMTP,
    implicit TLS, normal certificate validation, SMTP username
-   `louis@poulin-arpa.com`, exact delivery alias
-   `cluster_admin@poulin-arpa.com`, and a secret read from
+   `louis@poulin-arpa.com`, the two exact delivery aliases, and a secret read from
    `/etc/stalwart/secrets/fastmail-app-password`.
 3. An outbound route expression that selects that relay only when the queued
    recipient is exactly `admin@poulin-arpa.com` or
@@ -152,7 +180,11 @@ property, roll back this plan and record the exact SMTP status. The correction
 is a separately reviewed rewrapping bridge, not sender forgery disguised as a
 quick fix.
 
-## Apply, verification, and outage test
+## Historical apply, verification, and outage test
+
+This section records the stronger original gate. Its forced-interruption and
+restart portion is superseded for 1.1.1-beta by the beta reclassification
+above.
 
 After the compatibility gate passes:
 
@@ -184,8 +216,10 @@ final disposition, but no credentials, AUTH exchange, or message content.
 Keep the pre-change secret-stripped snapshot and a private rollback plan.
 Rollback performs only:
 
-1. restore the prior `MtaStageData` and `MtaOutboundStrategy` singleton values;
-2. remove the `fastmail-admin-copy` Sieve script and Relay route;
+1. disable the Fastmail `MtaStageData` script selector so no new copies form;
+2. preserve the recipient-specific route while any existing queue entry is
+   unresolved; remove it only after the queue is empty or explicitly
+   dispositioned;
 3. reload and prove local delivery still works and all external delivery is
    rejected;
 4. remove the Fastmail secret file only after configuration no longer
@@ -193,12 +227,11 @@ Rollback performs only:
 5. retain or disposition already accepted external queue entries explicitly—do
    not silently discard them.
 
-If local delivery, queue persistence, TLS verification, authentication,
-recipient restriction, or rollback fails, stop with the bridge disabled.
+If local delivery, TLS verification, authentication, recipient restriction, or
+rollback fails, stop with the bridge disabled. Restart-safe queue persistence
+is a documented beta limitation rather than an acceptance requirement.
 
 ## Execution gate
 
-This packet and its checked-in template are a proposal. They create no secret
-and make no live change. Execution requires explicit operator authorization of
-the committed packet and protected entry of the dedicated Fastmail app
-password.
+The operator authorized ordinary-path reactivation after documentation review.
+No forced outage or restart test is authorized under the beta gate.

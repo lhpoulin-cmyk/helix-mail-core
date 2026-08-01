@@ -23,6 +23,7 @@ the records rather than duplicating every command.
 - [`identity-model.md`](identity-model.md)
 - [`security-boundary.md`](security-boundary.md)
 - [`fastmail-boundary.md`](fastmail-boundary.md)
+- [`known-limitations.md`](known-limitations.md)
 - [`backup-and-restore.md`](backup-and-restore.md)
 - [`appliance-export.md`](appliance-export.md)
 - [`migration.md`](migration.md)

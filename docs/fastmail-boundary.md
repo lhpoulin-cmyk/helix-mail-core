@@ -1,15 +1,15 @@
 # Fastmail boundary
 
-Fastmail at `smtp.fastmail.com` is a disabled external transport boundary,
+Fastmail at `smtp.fastmail.com` is an active best-effort external-copy boundary,
 not inbound mail, identity, or availability dependency. SMTP authenticates as
 `louis@poulin-arpa.com`; the only delivery recipients are the existing aliases
 `admin@poulin-arpa.com` and `cluster_admin@poulin-arpa.com`. The checked-in
-policy has `enabled: false`.
+policy has `enabled: true`.
 
-## Accepted bridge design
+## Best-effort external copy bridge
 
-The operator selected store-and-forward copies for the two local
-administrative mailboxes:
+The operator selected convenience copies for the two local administrative
+mailboxes:
 
 - `admin@home.arpa`
 - `cluster-admin@home.arpa`
@@ -20,34 +20,35 @@ Fastmail boundary to its corresponding alias: `admin@poulin-arpa.com` or
 `cluster_admin@poulin-arpa.com`. The bridge is not a
 move, mailbox migration, alias, or replacement for local delivery.
 
-This is the useful failure mode: when the Internet or Fastmail is unavailable,
-local administrators and machines continue exchanging mail. The external copy
-waits in a visible queue, retries under a bounded policy, and eventually
-produces an operator-visible failure instead of disappearing with professional
-confidence.
+When the Internet or Fastmail is unavailable, local administrators and machines
+continue exchanging mail. An external copy may queue and retry during ordinary
+operation, but version 1.1.1-beta does not claim durable store-and-forward,
+exactly-once delivery, or restart-safe outbound queueing.
 
-The accepted design does not yet mean deployed. Fastmail remains disabled
-until the implementation packet proves the current Stalwart 0.16.15 schema,
-the exact app-password source, sender rewriting accepted by Fastmail, loop
-prevention, queue observability, and rollback.
+> An external Fastmail copy may be lost if Stalwart is stopped or restarted
+> while that copy is in an active delivery attempt. Local authoritative
+> delivery is unaffected.
 
-Activation requires a separate explicit packet naming an allowlisted message
-class, rate/volume cap, sender mapping, protected runtime-secret source,
-verification recipient, rollback, and operator approval. An app password is
-entered directly into a protected runtime secret (file with restrictive mode or
-approved secret facility), never Git, cloud-init, logs, history, template, or
-fixture. Configure Stalwart relay authentication from the protected source.
+Normal authenticated copies to both aliases passed with SMTP 250. The restart
+limitation is accepted for beta and recorded in
+[`known-limitations.md`](known-limitations.md). Fastmail copies are
+notifications and conveniences, never records of authority.
+
+Activation was bounded by an explicit packet naming the allowlisted messages,
+sender mapping, protected runtime-secret source, verification recipients, and
+rollback. The app password is held in a protected runtime file, never Git,
+cloud-init, logs, history, template, or fixture. Stalwart reads relay
+authentication from that protected source.
 Use a mail-core-specific app password for `louis@poulin-arpa.com`. Do not copy
 or reuse the shared hypervisor relay credential.
 
 Fail closed: no general authenticated relay, no MX route for arbitrary domains,
 and no relay if the secret/policy is absent. The only external recipients are
 `admin@poulin-arpa.com` and `cluster_admin@poulin-arpa.com`, each paired to its
-corresponding local administrative mailbox. An approved outbound message is kept queued for retry
-or classified failed with an alert; it is never silently discarded. Routine
+corresponding local administrative mailbox. Routine
 logs, telemetry, repeating monitor events, and bulk mail are not eligible.
-Disable immediately by removing the policy route/secret and restarting only
-under an approved change.
+Disable immediately by removing the DATA-stage selector under an approved
+change; preserve the relay route until any existing queue entries are resolved.
 
 The route must use a Stalwart Relay object with certificate validation enabled
 and an `authSecret` supplied by its `File` or `EnvironmentVariable` variant;

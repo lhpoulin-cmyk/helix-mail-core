@@ -12,8 +12,8 @@ Management and the construction test listeners remain on guest loopback.
 authenticated internal client -> submission/587 -> Stalwart -> local mailbox
                                                             |
 approved internal client <- IMAPS/993 -----------------------+
-
-external relay ------------------------------------------------ disabled
+                                                            |
+                                                            +-> best-effort Fastmail copy
 ```
 
 The durable identity is `mail.home.arpa`; Matriarch is temporary construction
@@ -88,8 +88,10 @@ DATA; submission sender matching prevents a machine from borrowing an
 administrator's envelope address.
 
 Stalwart's domain relaying is false. Public SMTP port 25, public
-administration, POP3, ManageSieve, public JMAP, Fastmail routing, and arbitrary
-external recipients are disabled.
+administration, POP3, ManageSieve, public JMAP, and arbitrary external
+recipients are disabled. One exact-recipient bridge copies Admin and Cluster
+Admin mail to their corresponding Fastmail aliases. It is best effort and does
+not change which mailbox is authoritative.
 
 ## Recovery design
 

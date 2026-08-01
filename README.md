@@ -74,16 +74,17 @@ can answer through the same local system. For me, that means talking to the lab
 through the same identities I use to understand it. None of that depends on a
 public DNS provider or a working Internet connection.
 
-It also clarified what an eventual Fastmail bridge should be: transport across
-an external boundary, not the source of local identity. If the bridge is later
-enabled and then disappears, local correspondents should continue recognizing
-and reaching one another.
+It also clarified what the Fastmail bridge should be: transport across an
+external boundary, not the source of local identity. The active beta bridge is
+deliberately best effort. It retains mail locally and sends convenience copies
+of the two administrative mailboxes to `admin@poulin-arpa.com` and
+`cluster_admin@poulin-arpa.com`. Local correspondents continue recognizing and
+reaching one another when Fastmail or the Internet disappears.
 
-That bridge now has an accepted shape, though it is still disabled: retain mail
-locally, forward a queued copy of the two administrative mailboxes to
-their corresponding `admin@poulin-arpa.com` and
-`cluster_admin@poulin-arpa.com` aliases, and let an Internet failure remain an external
-delivery problem instead of becoming a local-mail outage.
+The bridge is not a durable outbound queue. An external copy may be lost if
+Stalwart stops while that copy is in an active delivery attempt. Local mail is
+unaffected. This is less romantic than “exactly once,” but considerably more
+useful than pretending the test said something it did not.
 
 This repository is both the deployment contract and the construction record.
 The shorter documents explain the system as it exists now. The dated packets
@@ -237,9 +238,8 @@ The guts are good. The lipstick can wait.
 - no public SMTP listener or public MX path;
 - no port 25 listener, public administration, public JMAP, POP3, or
   ManageSieve;
-- no active Fastmail relay or real external-delivery test; the accepted
-  store-and-forward design remains a reviewed proposal until its implementation
-  packet is authorized and verified;
+- no durable, exactly-once, or restart-safe Fastmail queue; the active
+  recipient-specific bridge produces best-effort convenience copies only;
 - no PTR publication;
 - no ACME or public certificate issuance;
 - no automated command execution from received mail;

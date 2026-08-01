@@ -37,7 +37,7 @@ echo
 echo '## Operations'
 echo "- Internal CA reference: $TLS_CA_REFERENCE"
 echo "- Appliance export reference: $APPLIANCE_EXPORT_REFERENCE"
-echo '- Data mount: /srv/stalwart; Fastmail: disabled.'
+echo '- Data mount: /srv/stalwart; Fastmail: best-effort copies for the two reviewed administrative recipients only.'
 echo '- Rollback: do not publish DNS or start VM; preserve created disks/evidence for review.'
 } > "$out/deployment-report.md"
 echo "rendered $out/deployment-report.md"

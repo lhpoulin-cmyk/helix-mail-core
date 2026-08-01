@@ -50,13 +50,13 @@ The current soak does not establish:
 - a consistent portable appliance export;
 - an isolated import and restore proof;
 - `APPLIANCE_EXPORT_REFERENCE`;
-- Fastmail behavior;
+- durable or restart-safe Fastmail queue behavior;
 - permanent hypervisor or production VM identity;
 - migration, promotion readiness, or production readiness.
 
-Fastmail is not part of the current soak because it is disabled. If later
-authorized, its observation window and failure behavior belong in a separate
-bounded gate rather than being backdated into this one.
+The active Fastmail bridge is a best-effort convenience path and is not part of
+the authoritative local-mail soak. Its known restart limitation is not
+backdated into the soak and does not block version 1.1.1-beta.
 
 ## Promotion-readiness report
 

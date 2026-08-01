@@ -33,7 +33,8 @@ domain. Inside the guest, check:
 - exact Stalwart listeners: loopback management/test interfaces plus internal
   587 and 993, with no port 25 or wildcard bind;
 - certificate chain, SAN, expiry, and the 30-day renewal review threshold;
-- `allowRelaying=false`, Fastmail absent, and the machine RCPT policy selected;
+- `allowRelaying=false`, the exact-recipient Fastmail bridge selected, and the
+  machine RCPT policy selected;
 - both resolvers return the same forward A record and no invented PTR.
 
 Read-only health is evidence, not authorization to repair forward. When a
@@ -74,9 +75,15 @@ storage and operationally the wrong mailbox.
 
 ## Restart and reboot
 
-Before restarting Stalwart, prove `/srv/stalwart` is mounted and record queue
-state. After restart, verify the mount, listeners, certificate, relay policy,
-and a known local message. A guest reboot adds checks for the UUID-backed mount,
+Before restarting Stalwart, prove `/srv/stalwart` is mounted and inspect the
+outbound queue. Do not deliberately restart Stalwart while a Fastmail copy is
+in active delivery. If the queue is nonempty, wait for completion or explicitly
+accept possible loss of the non-authoritative copies. Never resend merely
+because delivery is uncertain; uncertainty plus automatic replay is how a
+convenience feature learns to make duplicates.
+
+After restart, verify the mount, listeners, certificate, relay policy, and a
+known local message. A guest reboot adds checks for the UUID-backed mount,
 network, SSH, guest agent, and VM autostart state.
 
 The mount-guard test that deliberately removes `/srv/stalwart` is not routine
@@ -102,8 +109,8 @@ of files a restore test.
 
 ## Disabled boundaries
 
-Do not enable Fastmail, port 25, public administration, public JMAP, POP3,
+Do not broaden Fastmail, enable port 25, public administration, public JMAP, POP3,
 ManageSieve, ACME, public DNS, PTR publication, VM autostart, or external
 delivery through routine operation. Each crosses a separately reviewed gate.
-The accepted Fastmail store-and-forward design is documented, but it remains
-disabled until its bounded implementation packet is executed and accepted.
+The Fastmail bridge is limited to the two reviewed recipient mappings and is a
+best-effort convenience path. It is not authoritative mail storage.

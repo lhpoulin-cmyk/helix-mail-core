@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Activated the recipient-specific Fastmail bridge as a best-effort external
+  copy path. Normal Admin and Cluster Admin copies passed authenticated TLS
+  delivery, while restart-safe or exactly-once outbound queueing remains an
+  explicit beta limitation. Local Stalwart mail remains authoritative.
 - Reworked the public documentation around the accepted beta and active-soak
   state, added the project story and documentation map, and corrected stale
   Stalwart, identity, and disk-size examples without rewriting historical

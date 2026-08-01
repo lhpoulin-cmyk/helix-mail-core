@@ -1,6 +1,6 @@
 # Fastmail queue-recovery correction packet
 
-Status: read-only diagnosis complete; external test blocked by missing preserved entry
+Status: diagnosis preserved; durable recovery deferred to a later milestone
 Baseline: `8b983da483c358290a73404b4bdc26e35648de8f`
 Target: `mail.home.arpa` / Stalwart `0.16.15`
 Preserved queue entry: `321587534895251968`
@@ -13,6 +13,11 @@ disabled fail-closed while this diagnosis runs. No message reinjection,
 database or queue-file edit, body inspection, queue deletion, public SMTP,
 general relay, DNS, TLS, identity, sender, soak, or promotion mutation belongs
 to this packet.
+
+The operator accepted this diagnosis as a version 1.1.1-beta limitation. No
+further exactly-once or active-attempt restart testing is required for beta.
+The correction design remains a future durable-outbound milestone and does not
+block the current soak or the best-effort bridge.
 
 The existing queue entry must not be released or rescheduled until its state,
 retry policy, route association, and duplicate-delivery risk are understood.
