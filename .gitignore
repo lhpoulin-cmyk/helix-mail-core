@@ -4,6 +4,7 @@ inventory/production/*.secret
 evidence/private/
 handoff/active-run
 handoff/runs/
+handoff/private/
 *.key
 *.pem
 *.p12
