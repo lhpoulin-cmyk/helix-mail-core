@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Completed read-only JMAP discovery and prepared the bounded, not-yet-executed
+  `hv-lore@home.arpa` authoritative-intake packet. The proposed service uses a
+  separate read-only Fastmail token, opens no listener, and leaves the active
+  outbound bridge unchanged.
 - Clarified the Fastmail boundary as two separate functions: an approved but
   not-yet-deployed inbound operator-direction contract and the already accepted
   outbound best-effort visibility bridge. This is a current policy correction;

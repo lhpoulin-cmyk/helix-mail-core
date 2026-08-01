@@ -81,12 +81,12 @@ of the two administrative mailboxes to `admin@poulin-arpa.com` and
 `cluster_admin@poulin-arpa.com`. Local correspondents continue recognizing and
 reaching one another when Fastmail or the Internet disappears.
 
-There is also a separate inbound authority contract. Mail authenticated as
-`louis@poulin-arpa.com` and delivered to one of the two designated local
-control mailboxes may carry authoritative operator direction to a local coder.
+There is also a separate inbound authority contract. Mail sent from the
+authenticated `louis@poulin-arpa.com` Fastmail account to the initial exact
+coder address `hv-lore@home.arpa` may carry authoritative operator direction.
 That establishes who asked for what; it does not let an email hop the fence
 around implementation packets or safety review. The contract is documented,
-but its Fastmail-to-local transport and intake enforcement are not deployed.
+Its pull-based JMAP implementation packet is prepared but not deployed.
 The outbound convenience copies do not turn into commands on the trip home.
 
 The bridge is not a durable outbound queue. An external copy may be lost if

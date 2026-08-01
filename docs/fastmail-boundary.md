@@ -16,8 +16,8 @@ The approved authority path is:
 
 ```text
 Louis using louis@poulin-arpa.com
-  -> admin@home.arpa or cluster-admin@home.arpa
-  -> local Stalwart delivery
+  -> hv-lore@home.arpa
+  -> authenticated Fastmail Sent-mail retrieval
   -> reviewed local coder or control-plane intake
   -> authoritative operator instruction
 ```
@@ -38,9 +38,9 @@ message and sanitized intake decision are evidence.
 This policy does not infer authority from replies, notifications, outbound
 copies, display names, message bodies claiming a different identity, or mail
 to another address. It also does not create a general Fastmail return route or
-bidirectional command protocol. Public SMTP remains disabled, and no deployed
-Fastmail-to-`home.arpa` transport or coder-intake service has yet been accepted;
-those require separate bounded implementation and verification.
+bidirectional command protocol. Public SMTP remains disabled. A bounded
+pull-based JMAP implementation packet now exists, but no Fastmail-to-
+`home.arpa` coder-intake service has yet been deployed or accepted.
 
 ## Best-effort external copy bridge
 

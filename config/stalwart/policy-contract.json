@@ -19,11 +19,10 @@
   },
   "operator_direction": {
     "direction": "fastmail-to-home-arpa",
-    "implementation_status": "policy-approved-transport-and-intake-not-deployed",
+    "implementation_status": "implementation-packet-prepared-not-deployed",
     "approved_sender": "louis@poulin-arpa.com",
     "designated_control_recipients": [
-      "admin@home.arpa",
-      "cluster-admin@home.arpa"
+      "hv-lore@home.arpa"
     ],
     "authority": "authoritative-operator-direction-when-policy-validates",
     "execution": "bounded-by-repository-packet-review-safety-and-scope-doctrine",

@@ -17,9 +17,9 @@ approved internal client <- IMAPS/993 -----------------------+
 ```
 
 The outward arrow is not the whole Fastmail story. A separate approved policy
-allows authenticated direction from `louis@poulin-arpa.com` into the exact
-control mailboxes `admin@home.arpa` and `cluster-admin@home.arpa`. When its
-future transport and intake enforcement validate sender, recipient, and scope,
+allows authenticated direction from `louis@poulin-arpa.com` into the initial
+exact coder address `hv-lore@home.arpa`. When its future pull-based JMAP
+transport and intake enforcement validate account, recipient, and scope,
 that local message can record authoritative operator intent for a coder. It
 still cannot bypass the repository's packet and safety gates. The inbound path
 is policy-defined but not deployed; public SMTP remains disabled.

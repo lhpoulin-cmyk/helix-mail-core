@@ -62,8 +62,8 @@ another endpoint to make a test convenient.
 ## Operator-direction intake
 
 The approved inbound authority contract names `louis@poulin-arpa.com` as the
-sender and `admin@home.arpa` plus `cluster-admin@home.arpa` as the only control
-recipients. It is not yet a deployed operating path. Until a bounded packet
+authenticated Fastmail account and `hv-lore@home.arpa` as the only initial
+coder recipient. It is not yet a deployed operating path. Until the bounded packet
 installs and verifies the transport and intake controls, do not treat a message
 as machine-ingested operator direction merely because it appears plausible.
 
@@ -72,6 +72,9 @@ canonical envelope recipient, preserve the received message, record the intake
 decision, and stop on ambiguity, identity mismatch, excessive scope, or a
 missing required implementation packet. Outbound Fastmail copies and replies
 are not shortcuts back into this path.
+
+The prepared procedure is
+[`../implementation/2026-08-01-fastmail-authoritative-hv-lore-intake.packet.md`](../implementation/2026-08-01-fastmail-authoritative-hv-lore-intake.packet.md).
 
 ## Administrative KMail client
 

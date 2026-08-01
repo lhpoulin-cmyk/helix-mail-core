@@ -90,8 +90,8 @@ the soak clock.
 
 A later governing clarification distinguishes that active outbound convenience
 bridge from an approved inbound operator-direction contract. Authenticated mail
-from `louis@poulin-arpa.com` to `admin@home.arpa` or
-`cluster-admin@home.arpa` may carry authoritative operator intent once an exact
+from `louis@poulin-arpa.com` to `hv-lore@home.arpa` may carry authoritative
+operator intent once an exact
 sender/recipient intake path is deployed and validated. No such inbound
 transport or coder intake is claimed in the current beta, and public SMTP
 remains disabled. Execution would still follow normal packet and safety

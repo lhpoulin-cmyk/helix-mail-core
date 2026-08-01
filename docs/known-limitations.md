@@ -33,8 +33,9 @@ beta or change the existing soak timestamp.
 ## Inbound operator-direction enforcement
 
 The repository defines an authoritative operator-direction policy for
-authenticated mail from `louis@poulin-arpa.com` to the two designated local
-control mailboxes. It does not yet contain accepted evidence of a deployed
+authenticated mail from `louis@poulin-arpa.com` to the initial coder address
+`hv-lore@home.arpa`. It does not yet contain accepted evidence of a deployed
 Fastmail-to-`home.arpa` transport or coder-intake service. Public SMTP remains
 disabled. Until that implementation is separately reviewed and verified, the
-policy is an authority contract, not a working command path.
+policy and prepared packet are an authority contract, not a working command
+path.

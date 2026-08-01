@@ -79,7 +79,8 @@ endpoint discovery gates rather than guessed configuration.
 
 Workspace transcriptions under that historical broad-mailbox proposal carry
 `AUTHORITY=NONE`. The later operator-direction policy is narrower and applies
-only to the approved Fastmail sender and two designated control mailboxes; it
+only to the approved Fastmail account and the initial exact coder recipient
+`hv-lore@home.arpa`; it
 does not retroactively grant authority to ordinary transcriptions. The bounded
 design and its activation gates are recorded in
 [`../implementation/2026-08-01-local-mail-to-workspace-packet-transcription.packet.md`](../implementation/2026-08-01-local-mail-to-workspace-packet-transcription.packet.md).
